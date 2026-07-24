@@ -42,7 +42,8 @@ function localeKeyboard(): InlineKeyboard {
 }
 
 async function unclaimedGuests(): Promise<Guest[]> {
-  const { data } = await db.from('guests').select('*').is('telegram_user_id', null).order('name');
+  // 'target' guests (grandma, 3-year-olds) appear in tasks but never in the join picker
+  const { data } = await db.from('guests').select('*').is('telegram_user_id', null).neq('status', 'target').order('name');
   return (data as Guest[]) ?? [];
 }
 

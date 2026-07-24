@@ -128,7 +128,7 @@ export default function Wall() {
                 src={entry.item.url}
                 alt=""
                 loading="lazy"
-                className="w-full rounded-xl border border-line"
+                className="w-full rounded-xl border border-line shadow-sm"
               />
             </figure>
           ) : (

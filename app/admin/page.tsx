@@ -73,6 +73,9 @@ async function Guests() {
   const { data: guests } = await db.from('guests').select('*').order('name');
   return (
     <section className="flex flex-col gap-3">
+      <p className="text-xs text-ink-muted">
+        status: <b>inactive</b> — can join via QR · <b>target</b> — appears in photo tasks, hidden from join list · <b>playing</b> — active player
+      </p>
       <form action={saveGuest} className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-line p-3">
         <GuestFields />
       </form>

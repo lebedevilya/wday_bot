@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Unbounded, Onest } from "next/font/google";
+import { Comfortaa, Onest } from "next/font/google";
 import "./globals.css";
 
-const unbounded = Unbounded({
-  variable: "--font-unbounded",
+const comfortaa = Comfortaa({
+  variable: "--font-comfortaa",
   subsets: ["latin", "cyrillic-ext"],
-  weight: ["400", "600", "800"],
+  weight: ["400", "600", "700"],
 });
 
 const onest = Onest({
@@ -24,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" className={`${unbounded.variable} ${onest.variable} h-full antialiased`}>
+    <html lang="ru" className={`${comfortaa.variable} ${onest.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
