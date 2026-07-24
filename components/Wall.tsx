@@ -36,6 +36,7 @@ export default function Wall() {
   useEffect(() => {
     const saved = localStorage.getItem('wday-locale') as Locale | null;
     if (saved) setLocale(saved);
+    document.documentElement.lang = saved ?? 'ru';
     let alive = true;
     const load = async () => {
       try {
@@ -58,7 +59,7 @@ export default function Wall() {
     return () => { alive = false; clearInterval(timer); };
   }, []);
 
-  const pick = (l: Locale) => { setLocale(l); localStorage.setItem('wday-locale', l); };
+  const pick = (l: Locale) => { setLocale(l); localStorage.setItem('wday-locale', l); document.documentElement.lang = l; };
   const t = (key: keyof typeof ui) => ui[key][locale];
 
   // one stream: photos and wish-cards interleaved by recency

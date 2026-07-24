@@ -7,7 +7,7 @@
   --surface-2: oklch(0.935 0.022 352);
   --ink: oklch(0.3 0.035 350);
   --ink-muted: oklch(0.5 0.04 350);
-  --accent: oklch(0.6 0.15 3); /* dusty rose */
+  --accent: oklch(0.56 0.15 3); /* dusty rose — L .56 keeps text uses ≥4.5:1 on bg and white-on-accent ≥4.5:1 */
   --accent-ink: oklch(0.995 0.005 350);
   --line: oklch(0.89 0.025 352);
   --danger: oklch(0.55 0.2 25);

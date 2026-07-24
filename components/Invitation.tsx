@@ -32,52 +32,81 @@ function Petal({ p }: { p: (typeof PETALS)[number] }) {
       aria-hidden
     >
       <svg width={p.s} height={p.s} viewBox="0 0 24 24" style={{ transform: `rotate(${p.r}deg)` }}>
-        <path
-          d="M12 2C16 7 19 10 19 14a7 7 0 1 1-14 0c0-4 3-7 7-12z"
-          fill="oklch(0.85 0.07 356)"
-        />
+        <path d="M12 2C16 7 19 10 19 14a7 7 0 1 1-14 0c0-4 3-7 7-12z" fill="oklch(0.85 0.07 356)" />
       </svg>
     </span>
   );
 }
 
+type SendState = 'idle' | 'sending' | 'error';
+
 export default function Invitation() {
   const [locale, setLocale] = useState<Locale>('ru');
-  const [guests, setGuests] = useState<RsvpGuest[]>([]);
+  const [guests, setGuests] = useState<RsvpGuest[] | null>(null); // null = loading
   const [query, setQuery] = useState('');
   const [chosen, setChosen] = useState<RsvpGuest | null>(null);
   const [party, setParty] = useState(1);
+  const [confirmingNo, setConfirmingNo] = useState(false);
+  const [send, setSend] = useState<SendState>('idle');
   const [answered, setAnswered] = useState<'yes' | 'no' | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('wday-locale') as Locale | null;
     if (saved) setLocale(saved);
-    fetch('/api/rsvp').then((r) => r.json()).then((j) => setGuests(j.guests ?? [])).catch(() => {});
+    fetch('/api/rsvp')
+      .then((r) => r.json())
+      .then((j) => setGuests(j.guests ?? []))
+      .catch(() => setGuests([]));
   }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = locale === 'kk' ? 'kk' : locale;
+  }, [locale]);
 
   const pickLocale = (l: Locale) => { setLocale(l); localStorage.setItem('wday-locale', l); };
   const ui = EVENT.ui;
+  const t = (s: Record<Locale, string>, vars: Record<string, string | number> = {}) => {
+    let out = s[locale] ?? s.ru;
+    for (const [k, v] of Object.entries(vars)) out = out.replaceAll(`{${k}}`, String(v));
+    return out;
+  };
 
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (q.length < 2) return [];
+    if (q.length < 2 || !guests) return [];
     return guests.filter((g) => g.name.toLowerCase().includes(q)).slice(0, 8);
   }, [query, guests]);
 
+  const searching = query.trim().length >= 2;
+
   async function answer(status: 'yes' | 'no') {
-    if (!chosen) return;
-    setAnswered(status);
-    await fetch('/api/rsvp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ guest_id: chosen.id, status, party }),
-    }).catch(() => {});
+    if (!chosen || send === 'sending') return;
+    setSend('sending');
+    try {
+      const res = await fetch('/api/rsvp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guest_id: chosen.id, status, party }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      setSend('idle');
+      setConfirmingNo(false);
+      setAnswered(status);
+    } catch {
+      setSend('error');
+    }
   }
+
+  const contactLink = (
+    <a href={EVENT.contactUrl} target="_blank" rel="noopener" className="font-semibold text-accent underline">
+      {t(ui.rsvpWrite)} →
+    </a>
+  );
 
   return (
     <main className="relative overflow-x-clip">
       {/* hero */}
-      <section className="relative flex min-h-[92svh] flex-col items-center justify-center px-6 text-center">
+      <section className="relative flex min-h-[92svh] flex-col items-center justify-center px-6 pb-16 text-center">
         <div
           aria-hidden
           className="absolute inset-0 -z-10"
@@ -93,7 +122,7 @@ export default function Invitation() {
             <button
               key={l}
               onClick={() => pickLocale(l)}
-              className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+              className={`rounded-full px-4 py-2.5 text-sm font-semibold transition-colors ${
                 locale === l ? 'bg-accent text-accent-ink' : 'text-ink-muted hover:text-ink'
               }`}
             >
@@ -102,30 +131,37 @@ export default function Invitation() {
           ))}
         </nav>
 
-        <p className="mb-6 text-base tracking-wide text-ink-muted sm:text-lg">{EVENT.dateLine[locale]}</p>
+        <p className="mb-6 text-base tracking-wide text-ink-muted sm:text-lg">{t(EVENT.dateLine)}</p>
         <h1 className="font-light italic leading-[1.08] text-[clamp(2.6rem,9vw,6rem)]">
-          {EVENT.names[locale]}
+          {t(EVENT.names)}
         </h1>
         <p className="mt-8 max-w-[46ch] text-lg leading-relaxed text-ink-muted sm:text-xl">
-          {EVENT.inviteLine[locale]}
+          {t(EVENT.inviteLine)}
         </p>
         <a
           href="#rsvp"
           className="mt-12 rounded-full bg-accent px-8 py-4 text-base font-semibold text-accent-ink shadow-lg shadow-accent/25 transition-transform hover:scale-[1.03]"
         >
-          {ui.rsvpCta[locale]}
+          {t(ui.rsvpCta)}
+        </a>
+        <a
+          href="#schedule"
+          aria-label={t(ui.scheduleTitle)}
+          className="absolute bottom-5 text-2xl text-ink-muted"
+        >
+          ↓
         </a>
       </section>
 
       {/* schedule */}
-      <section className="mx-auto max-w-xl px-6 py-[clamp(4rem,10vw,7rem)]">
-        <h2 className="mb-10 text-center text-3xl font-light italic sm:text-4xl">{ui.scheduleTitle[locale]}</h2>
+      <section id="schedule" className="mx-auto max-w-xl px-6 py-[clamp(4rem,10vw,7rem)]">
+        <h2 className="mb-10 text-center text-3xl font-light italic sm:text-4xl">{t(ui.scheduleTitle)}</h2>
         <ol className="relative ml-3 border-l border-line pl-8">
           {EVENT.schedule.map((item, i) => (
             <li key={i} className="relative pb-9 last:pb-0">
               <span aria-hidden className="absolute -left-[2.32rem] top-1.5 h-3 w-3 rounded-full border-2 border-accent bg-bg" />
-              <p className="font-[var(--font-literata)] text-xl text-accent">{item.time}</p>
-              <p className="mt-1 text-lg">{item.label[locale]}</p>
+              <p className="font-display text-xl text-accent">{item.time}</p>
+              <p className="mt-1 text-lg">{t(item.label)}</p>
             </li>
           ))}
         </ol>
@@ -133,49 +169,57 @@ export default function Invitation() {
 
       {/* venue */}
       <section className="bg-surface px-6 py-[clamp(4rem,10vw,7rem)] text-center">
-        <h2 className="text-3xl font-light italic sm:text-4xl">{ui.whereTitle[locale]}</h2>
-        <p className="mt-8 text-2xl sm:text-3xl">{EVENT.venueName[locale]}</p>
-        <p className="mt-3 text-lg text-ink-muted">{EVENT.venueAddress[locale]}</p>
+        <h2 className="text-3xl font-light italic sm:text-4xl">{t(ui.whereTitle)}</h2>
+        <p className="mt-8 text-2xl sm:text-3xl">{t(EVENT.venueName)}</p>
+        <p className="mt-3 text-lg text-ink-muted">{t(EVENT.venueAddress)}</p>
         <a
           href={EVENT.mapUrl}
           target="_blank"
           rel="noopener"
           className="mt-8 inline-block rounded-full border border-accent px-7 py-3 font-semibold text-accent transition-colors hover:bg-accent hover:text-accent-ink"
         >
-          {ui.openMap[locale]}
+          {t(ui.openMap)}
         </a>
       </section>
 
       {/* rsvp */}
       <section id="rsvp" className="mx-auto max-w-xl px-6 py-[clamp(4rem,10vw,7rem)] text-center">
-        <h2 className="text-3xl font-light italic sm:text-4xl">{ui.rsvpTitle[locale]}</h2>
+        <h2 className="text-3xl font-light italic sm:text-4xl">{t(ui.rsvpTitle)}</h2>
 
         {answered ? (
           <div className="mt-10">
             <p className="text-2xl leading-relaxed">
-              {answered === 'yes' ? ui.rsvpThanksYes[locale] : ui.rsvpThanksNo[locale]}
+              {answered === 'yes' ? t(ui.rsvpThanksYes) : t(ui.rsvpThanksNo)}
             </p>
+            {answered === 'yes' && (
+              <p className="mt-3 text-lg text-ink-muted">
+                {t(ui.rsvpRecorded, { n: party })} · {t(EVENT.dateLine)}
+              </p>
+            )}
             <button
-              onClick={() => { setAnswered(null); setChosen(null); setQuery(''); }}
-              className="mt-6 text-sm text-ink-muted underline"
+              onClick={() => { setAnswered(null); setChosen(null); setQuery(''); setSend('idle'); }}
+              className="mt-8 rounded-full border border-line px-6 py-3 text-base text-ink-muted hover:text-ink"
             >
-              {ui.rsvpChange[locale]}
+              {t(ui.rsvpChange)}
             </button>
           </div>
         ) : !chosen ? (
           <div className="mt-8">
-            <p className="mb-4 text-ink-muted">{ui.rsvpFind[locale]}</p>
+            <p className="mb-4 text-ink-muted">{t(ui.rsvpFind)}</p>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={ui.rsvpSearch[locale]}
+              placeholder={t(ui.rsvpSearch)}
               className="w-full max-w-sm rounded-full border border-line bg-bg px-6 py-3.5 text-center text-lg text-ink outline-none focus:border-accent"
             />
+            {searching && guests === null && (
+              <p className="mt-4 text-ink-muted">{t(ui.loading)}</p>
+            )}
             <ul className="mx-auto mt-4 flex max-w-sm flex-col gap-2">
               {matches.map((g) => (
                 <li key={g.id}>
                   <button
-                    onClick={() => { setChosen(g); setParty(1); }}
+                    onClick={() => { setChosen(g); setParty(1); setConfirmingNo(false); setSend('idle'); }}
                     className="w-full rounded-full border border-line px-6 py-3 text-lg transition-colors hover:border-accent hover:text-accent"
                   >
                     {g.name}
@@ -183,34 +227,96 @@ export default function Invitation() {
                 </li>
               ))}
             </ul>
+            {searching && guests !== null && matches.length === 0 && (
+              <p className="mt-6 text-lg text-ink-muted">
+                {t(ui.rsvpNotFound)} {contactLink}
+              </p>
+            )}
+            {!searching && (
+              <p className="mt-6 text-sm text-ink-muted">
+                {t(ui.rsvpNotFound)} {contactLink}
+              </p>
+            )}
           </div>
         ) : (
           <div className="mt-10 flex flex-col items-center gap-8">
             <p className="text-2xl">{chosen.name}</p>
             <div>
-              <p className="mb-3 text-ink-muted">{ui.rsvpParty[locale]}</p>
+              <p className="mx-auto mb-3 max-w-[34ch] text-ink-muted">{t(ui.rsvpParty)}</p>
               <div className="flex items-center justify-center gap-5">
-                <button onClick={() => setParty(Math.max(1, party - 1))} aria-label="−" className="h-11 w-11 rounded-full border border-line text-xl">−</button>
-                <span className="w-8 text-2xl">{party}</span>
-                <button onClick={() => setParty(Math.min(6, party + 1))} aria-label="+" className="h-11 w-11 rounded-full border border-line text-xl">+</button>
+                <button
+                  onClick={() => setParty(Math.max(1, party - 1))}
+                  aria-label={t(ui.fewer)}
+                  className="h-12 w-12 rounded-full border border-line text-2xl"
+                >
+                  −
+                </button>
+                <span className="w-8 text-2xl" aria-live="polite">{party}</span>
+                <button
+                  onClick={() => setParty(Math.min(6, party + 1))}
+                  aria-label={t(ui.more)}
+                  className="h-12 w-12 rounded-full border border-line text-2xl"
+                >
+                  +
+                </button>
               </div>
             </div>
-            <div className="flex flex-wrap justify-center gap-3">
-              <button onClick={() => answer('yes')} className="rounded-full bg-accent px-8 py-4 text-lg font-semibold text-accent-ink shadow-lg shadow-accent/25">
-                {ui.rsvpYes[locale]}
-              </button>
-              <button onClick={() => answer('no')} className="rounded-full border border-line px-8 py-4 text-lg text-ink-muted hover:text-ink">
-                {ui.rsvpNo[locale]}
-              </button>
-            </div>
-            <button onClick={() => setChosen(null)} className="text-sm text-ink-muted underline">←</button>
+
+            {send === 'error' && (
+              <p className="max-w-[40ch] text-base text-danger">
+                {t(ui.rsvpError)} {contactLink}
+              </p>
+            )}
+
+            {confirmingNo ? (
+              <div className="flex flex-col items-center gap-4">
+                <p className="text-xl">{t(ui.declineConfirm)}</p>
+                <div className="flex flex-wrap justify-center gap-3">
+                  <button
+                    onClick={() => answer('no')}
+                    disabled={send === 'sending'}
+                    className="rounded-full border border-line px-8 py-4 text-lg text-ink-muted hover:text-ink disabled:opacity-60"
+                  >
+                    {send === 'sending' ? t(ui.rsvpSending) : t(ui.rsvpNo)}
+                  </button>
+                  <button onClick={() => setConfirmingNo(false)} className="rounded-full bg-accent px-8 py-4 text-lg font-semibold text-accent-ink">
+                    {t(ui.back)}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap justify-center gap-3">
+                <button
+                  onClick={() => answer('yes')}
+                  disabled={send === 'sending'}
+                  className="rounded-full bg-accent px-8 py-4 text-lg font-semibold text-accent-ink shadow-lg shadow-accent/25 disabled:opacity-60"
+                >
+                  {send === 'sending'
+                    ? t(ui.rsvpSending)
+                    : party > 1
+                      ? t(ui.rsvpYesN, { n: party })
+                      : t(ui.rsvpYes)}
+                </button>
+                <button
+                  onClick={() => setConfirmingNo(true)}
+                  disabled={send === 'sending'}
+                  className="rounded-full border border-line px-8 py-4 text-lg text-ink-muted hover:text-ink disabled:opacity-60"
+                >
+                  {t(ui.rsvpNo)}
+                </button>
+              </div>
+            )}
+
+            <button onClick={() => { setChosen(null); setConfirmingNo(false); setSend('idle'); }} className="rounded-full border border-line px-5 py-2.5 text-sm text-ink-muted hover:text-ink">
+              ← {t(ui.back)}
+            </button>
           </div>
         )}
       </section>
 
       <footer className="flex flex-col items-center gap-4 border-t border-line px-6 py-12 text-center">
-        <Link href="/wall" className="text-lg font-semibold text-accent">{ui.wallLink[locale]}</Link>
-        <p className="text-sm text-ink-muted">{EVENT.names[locale]} · {EVENT.dateLine[locale]}</p>
+        <Link href="/wall" className="text-lg font-semibold text-accent">{t(ui.wallLink)}</Link>
+        <p className="text-sm text-ink-muted">{t(EVENT.names)} · {t(EVENT.dateLine)}</p>
       </footer>
     </main>
   );
