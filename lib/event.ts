@@ -6,8 +6,7 @@ type L<T = string> = Record<Locale, T>;
 
 export const EVENT = {
   names: { ru: 'Илья и Айгуль', en: 'Ilya & Aigul', kk: 'Илья мен Айгүл' } as L,
-  // TODO: real date
-  dateLine: { ru: '16 августа 2026', en: 'August 16, 2026', kk: '2026 жылғы 16 тамыз' } as L,
+  dateLine: { ru: '8 августа 2026', en: 'August 8, 2026', kk: '2026 жылғы 8 тамыз' } as L,
   inviteLine: {
     ru: 'Мы женимся — и очень хотим разделить этот день с вами',
     en: 'We are getting married — and we would love to share this day with you',
@@ -19,11 +18,10 @@ export const EVENT = {
   // TODO: real map link (2GIS / Google / Yandex)
   mapUrl: 'https://go.2gis.com/TODO',
   schedule: [
-    // TODO: real times
-    { time: '15:00', label: { ru: 'Сбор гостей и игра', en: 'Guests arrive · the game', kk: 'Қонақтарды қарсы алу · ойын' } as L },
-    { time: '17:00', label: { ru: 'Церемония', en: 'Ceremony', kk: 'Неке қию рәсімі' } as L },
-    { time: '18:00', label: { ru: 'Банкет', en: 'Reception', kk: 'Банкет' } as L },
-    { time: '23:00', label: { ru: 'Завершение вечера', en: 'End of the evening', kk: 'Кештің аяқталуы' } as L },
+    { time: '16:00', label: { ru: 'Сбор гостей и игра', en: 'Guests arrive · the game', kk: 'Қонақтарды қарсы алу · ойын' } as L },
+    { time: '18:00', label: { ru: 'Церемония', en: 'Ceremony', kk: 'Неке қию рәсімі' } as L },
+    { time: '19:00', label: { ru: 'Банкет', en: 'Reception', kk: 'Банкет' } as L },
+    { time: '21:00', label: { ru: 'Завершение вечера', en: 'End of the evening', kk: 'Кештің аяқталуы' } as L },
   ],
   ui: {
     rsvpTitle: { ru: 'Вы придете?', en: 'Will you join us?', kk: 'Келесіз бе?' } as L,
