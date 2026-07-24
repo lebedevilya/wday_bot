@@ -13,6 +13,7 @@ export async function verifyPhoto(
   submitted: Buffer,
   taskDescription: string,
   reference?: Buffer | null,
+  submittedMime = 'image/jpeg',
 ): Promise<Verdict> {
   try {
     const parts: object[] = [
@@ -25,8 +26,8 @@ export async function verifyPhoto(
           'Be lenient: party lighting, silly poses and partial faces are fine. Answer "no" ONLY if the photo clearly has nothing to do with the task (e.g. a random object, empty room, screenshot). If in doubt answer "unsure".',
       },
     ];
-    if (reference) parts.push({ inlineData: { mimeType: 'image/jpeg', data: reference.toString('base64') } });
-    parts.push({ inlineData: { mimeType: 'image/webp', data: submitted.toString('base64') } });
+    if (reference) parts.push({ inlineData: { mimeType: 'image/webp', data: reference.toString('base64') } }); // admin refs are webp
+    parts.push({ inlineData: { mimeType: submittedMime, data: submitted.toString('base64') } });
 
     const res = await ai.models.generateContent({
       model: 'gemini-flash-latest',

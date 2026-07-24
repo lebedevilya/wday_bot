@@ -40,9 +40,10 @@ Mark `[x]` as completed. If we stop, resume from first unchecked item.
 - [x] QR deep-link (t.me/BOT?start=join — bot handles any /start payload)
 - [x] scripts/set-webhook.ts (`npm run webhook`)
 - [x] README.md quick-start
-- [ ] Fill .env.local with real creds, run schema.sql + seed.sql in Supabase
-- [ ] Local end-to-end test with real bot (npm run bot + npm run dev)
-- [ ] Vercel deploy + env vars + npm run webhook
+- [x] Fill .env.local with real creds, run schema.sql + seed.sql in Supabase
+- [x] Local end-to-end test with real bot (join → task → photo → Gemini approve → wall)
+- [x] Vercel deploy (https://wday-tau.vercel.app) + env vars + webhook set
+- [x] Light white-pink redesign (Comfortaa + Onest, dusty-rose accent)
 - [ ] Seed real guest list + reference photos via /admin
 - [ ] Attach custom domain **wday.ilyalebe.dev** (Vercel project → Domains → add wday.ilyalebe.dev, add CNAME `wday` → cname.vercel-dns.com in ilyalebe.dev DNS; update NEXT_PUBLIC_SITE_URL + re-run `npm run webhook`)
 - [ ] Dry run with test account end-to-end

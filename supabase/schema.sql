@@ -49,6 +49,7 @@ create index on assignments (target_guest_id);
 create table photos (
   id uuid primary key default gen_random_uuid(),
   url text not null,
+  thumb_url text,
   team_id uuid references teams(id) on delete set null,
   source text not null check (source in ('task','free','wish')),
   visible boolean not null default true,
@@ -61,6 +62,7 @@ create table wishes (
   team_id uuid references teams(id) on delete set null,
   text text not null,
   photo_url text,
+  thumb_url text,
   visible boolean not null default true,
   created_at timestamptz not null default now()
 );

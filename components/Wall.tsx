@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 
 type Locale = 'ru' | 'kk' | 'en';
 
-interface WallPhoto { id: string; url: string; created_at: string }
-interface WallWish { id: string; text: string; photo_url: string | null; created_at: string; author: string | null }
+interface WallPhoto { id: string; url: string; thumb_url: string | null; created_at: string }
+interface WallWish { id: string; text: string; photo_url: string | null; thumb_url: string | null; created_at: string; author: string | null }
 interface WallTeam { id: string; name: string; points: number }
 interface WallData { photos: WallPhoto[]; wishes: WallWish[]; leaderboard: WallTeam[] }
 
@@ -123,13 +123,15 @@ export default function Wall() {
         {stream.map((entry) =>
           entry.kind === 'photo' ? (
             <figure key={entry.item.id} className={`mb-3 break-inside-avoid ${isNew(entry.item.id) ? 'arrive' : ''}`}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={entry.item.url}
-                alt=""
-                loading="lazy"
-                className="w-full rounded-xl border border-line shadow-sm"
-              />
+              <a href={entry.item.url} target="_blank" rel="noopener">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={entry.item.thumb_url ?? entry.item.url}
+                  alt=""
+                  loading="lazy"
+                  className="w-full rounded-xl border border-line shadow-sm"
+                />
+              </a>
             </figure>
           ) : (
             <blockquote
@@ -142,8 +144,10 @@ export default function Wall() {
                 {entry.item.text || '💌'}
               </p>
               {entry.item.photo_url && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={entry.item.photo_url} alt="" loading="lazy" className="mt-4 w-full rounded-lg" />
+                <a href={entry.item.photo_url} target="_blank" rel="noopener">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={entry.item.thumb_url ?? entry.item.photo_url} alt="" loading="lazy" className="mt-4 w-full rounded-lg" />
+                </a>
               )}
               {entry.item.author && <footer className="mt-3 text-sm opacity-80">— {entry.item.author}</footer>}
             </blockquote>

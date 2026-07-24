@@ -223,7 +223,7 @@ bot.on('message:photo', async (ctx) => {
 
   if (awaiting.kind === 'task') {
     await ctx.reply(t(guest.locale, 'checking'));
-    const { url, buffer } = await storeTelegramPhoto(fileId);
+    const { url, thumbUrl, buffer, mime } = await storeTelegramPhoto(fileId);
     const { data: a } = await db
       .from('assignments')
       .select('*, task_templates(*), target:guests!assignments_target_guest_id_fkey(name, photo_url)')
@@ -235,25 +235,25 @@ bot.on('message:photo', async (ctx) => {
     let title = tt.title[guest.locale] ?? tt.title.ru;
     if (target) title = title.replaceAll('{name}', target.name);
     const reference = target?.photo_url ? await fetchImage(target.photo_url) : null;
-    const verdict = await verifyPhoto(buffer, title, reference);
+    const verdict = await verifyPhoto(buffer, title, reference, mime);
     await db.from('assignments').update({ photo_url: url, ai_verdict: verdict, submitted_at: new Date().toISOString() }).eq('id', a.id);
     await setState(tgId, { ...state, awaiting: undefined });
     if (verdict.match === 'no') return ctx.reply(t(guest.locale, 'rejected'));
     const total = await awardPoints(a.id, tt.points);
-    await db.from('photos').insert({ url, team_id: guest.team_id, source: 'task' });
+    await db.from('photos').insert({ url, thumb_url: thumbUrl, team_id: guest.team_id, source: 'task' });
     return ctx.reply(t(guest.locale, 'approved', { points: tt.points, total }));
   }
 
   if (awaiting.kind === 'wish') {
-    const { url } = await storeTelegramPhoto(fileId);
-    await db.from('wishes').insert({ team_id: guest.team_id, text: ctx.message.caption ?? '', photo_url: url });
+    const { url, thumbUrl } = await storeTelegramPhoto(fileId);
+    await db.from('wishes').insert({ team_id: guest.team_id, text: ctx.message.caption ?? '', photo_url: url, thumb_url: thumbUrl });
     await setState(tgId, { ...state, awaiting: undefined });
     return ctx.reply(t(guest.locale, 'wish_saved'));
   }
 
   // free
-  const { url } = await storeTelegramPhoto(fileId);
-  await db.from('photos').insert({ url, team_id: guest.team_id, source: 'free' });
+  const { url, thumbUrl } = await storeTelegramPhoto(fileId);
+  await db.from('photos').insert({ url, thumb_url: thumbUrl, team_id: guest.team_id, source: 'free' });
   await setState(tgId, { ...state, awaiting: undefined });
   return ctx.reply(t(guest.locale, 'photo_saved', { url: SITE }));
 });
