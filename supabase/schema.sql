@@ -17,6 +17,8 @@ create table guests (
   telegram_user_id bigint unique,
   team_id uuid references teams(id) on delete set null,
   locale text not null default 'ru' check (locale in ('ru','en','kk')),
+  rsvp_status text not null default 'pending' check (rsvp_status in ('pending','yes','no')),
+  rsvp_party int not null default 1,
   created_at timestamptz not null default now()
 );
 

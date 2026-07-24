@@ -1,5 +1,5 @@
-import Wall from '@/components/Wall';
+import Invitation from '@/components/Invitation';
 
 export default function Home() {
-  return <Wall />;
+  return <Invitation />;
 }

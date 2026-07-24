@@ -71,8 +71,14 @@ function GuestFields({ g }: { g?: Guest }) {
 
 async function Guests() {
   const { data: guests } = await db.from('guests').select('*').order('name');
+  const yes = guests?.filter((g) => g.rsvp_status === 'yes') ?? [];
+  const no = guests?.filter((g) => g.rsvp_status === 'no') ?? [];
+  const partySum = yes.reduce((n, g) => n + (g.rsvp_party ?? 1), 0);
   return (
     <section className="flex flex-col gap-3">
+      <p className="text-sm">
+        RSVP: <b className="text-ok">{yes.length} yes</b> ({partySum} people) · <b className="text-danger">{no.length} no</b> · {(guests?.length ?? 0) - yes.length - no.length} pending
+      </p>
       <p className="text-xs text-ink-muted">
         status: <b>inactive</b> — can join via QR · <b>target</b> — appears in photo tasks, hidden from join list · <b>playing</b> — active player
       </p>
@@ -88,7 +94,10 @@ async function Guests() {
           <form action={saveGuest} className="flex flex-wrap items-center gap-2">
             <GuestFields g={g} />
           </form>
-          <span className="text-xs text-ink-muted">{g.telegram_user_id ? `tg✓` : ''}</span>
+          <span className="text-xs text-ink-muted">
+            {g.rsvp_status === 'yes' ? `✅×${g.rsvp_party}` : g.rsvp_status === 'no' ? '🚫' : ''}
+            {g.telegram_user_id ? ' tg✓' : ''}
+          </span>
           {g.telegram_user_id && (
             <form action={resetGuestBinding}>
               <input type="hidden" name="id" value={g.id} />

@@ -255,7 +255,7 @@ bot.on('message:photo', async (ctx) => {
   const { url, thumbUrl } = await storeTelegramPhoto(fileId);
   await db.from('photos').insert({ url, thumb_url: thumbUrl, team_id: guest.team_id, source: 'free' });
   await setState(tgId, { ...state, awaiting: undefined });
-  return ctx.reply(t(guest.locale, 'photo_saved', { url: SITE }));
+  return ctx.reply(t(guest.locale, 'photo_saved', { url: `${SITE}/wall` }));
 });
 
 // --- text (wishes) ---

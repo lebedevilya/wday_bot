@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Comfortaa, Onest } from "next/font/google";
+import { Literata, Onest } from "next/font/google";
 import "./globals.css";
 
-const comfortaa = Comfortaa({
-  variable: "--font-comfortaa",
-  subsets: ["latin", "cyrillic-ext"],
-  weight: ["400", "600", "700"],
+const literata = Literata({
+  variable: "--font-literata",
+  subsets: ["latin", "cyrillic", "cyrillic-ext"],
+  weight: ["300", "400", "600"],
+  style: ["normal", "italic"],
 });
 
 const onest = Onest({
@@ -24,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" className={`${comfortaa.variable} ${onest.variable} h-full antialiased`}>
+    <html lang="ru" className={`${literata.variable} ${onest.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

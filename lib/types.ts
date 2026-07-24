@@ -12,6 +12,8 @@ export interface Guest {
   telegram_user_id: number | null;
   team_id: string | null;
   locale: Locale;
+  rsvp_status: 'pending' | 'yes' | 'no';
+  rsvp_party: number;
 }
 
 export interface Team {

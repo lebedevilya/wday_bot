@@ -25,7 +25,7 @@
   --color-line: var(--line);
   --color-danger: var(--danger);
   --color-ok: var(--ok);
-  --font-display: var(--font-comfortaa);
+  --font-display: var(--font-literata);
   --font-sans: var(--font-onest);
 }
 
@@ -36,7 +36,7 @@ body {
 }
 
 h1, h2, h3 {
-  font-family: var(--font-comfortaa), var(--font-onest), sans-serif;
+  font-family: var(--font-literata), serif;
   text-wrap: balance;
 }
 
@@ -51,3 +51,22 @@ h1, h2, h3 {
 @media (prefers-reduced-motion: reduce) {
   .arrive { animation: none; }
 }
+
+/* slow drifting petals on the invitation hero */
+@keyframes petal-drift {
+  0% { transform: translateY(-8vh) rotate(0deg); opacity: 0; }
+  12% { opacity: var(--petal-o, 0.5); }
+  100% { transform: translateY(105vh) rotate(300deg); opacity: 0; }
+}
+.petal {
+  position: absolute;
+  top: 0;
+  animation: petal-drift var(--petal-t, 16s) linear infinite;
+  animation-delay: var(--petal-d, 0s);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .petal { animation: none; opacity: 0.25; top: var(--petal-static, 40%); }
+}
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
