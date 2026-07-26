@@ -53,3 +53,4 @@ Mark `[x]` as completed. If we stop, resume from first unchecked item.
 - [ ] @BotFather token → TELEGRAM_BOT_TOKEN
 - [ ] Google AI Studio key → GEMINI_API_KEY
 - [ ] Vercel account link
+- [ ] ⚠️ Gemini API credits DEPLETED (429) — top up / switch billing before wedding, verification currently auto-approves everything
