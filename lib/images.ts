@@ -28,9 +28,10 @@ export async function storeTelegramPhoto(fileId: string): Promise<StoredPhoto> {
   const id = randomUUID();
   const ext = filePath.split('.').pop() ?? 'jpg';
   const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+  // Blob, not Buffer: raw Buffers get UTF-8-mangled somewhere in the upload path on Vercel
   const [full, small] = await Promise.all([
-    db.storage.from('photos').upload(`${id}.${ext}`, original, { contentType: mime }),
-    db.storage.from('photos').upload(`${id}-thumb.webp`, thumb, { contentType: 'image/webp' }),
+    db.storage.from('photos').upload(`${id}.${ext}`, new Blob([new Uint8Array(original)], { type: mime }), { contentType: mime }),
+    db.storage.from('photos').upload(`${id}-thumb.webp`, new Blob([new Uint8Array(thumb)], { type: 'image/webp' }), { contentType: 'image/webp' }),
   ]);
   if (full.error) throw full.error;
   if (small.error) throw small.error;

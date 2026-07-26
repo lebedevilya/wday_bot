@@ -45,7 +45,7 @@ export async function saveGuest(formData: FormData) {
       .webp({ quality: 80 })
       .toBuffer();
     const path = `ref-${randomUUID()}.webp`;
-    await db.storage.from('photos').upload(path, compressed, { contentType: 'image/webp' });
+    await db.storage.from('photos').upload(path, new Blob([new Uint8Array(compressed)], { type: 'image/webp' }), { contentType: 'image/webp' });
     const { data } = db.storage.from('photos').getPublicUrl(path);
     const target = id || (await db.from('guests').select('id').eq('name', row.name).order('created_at', { ascending: false }).limit(1).single()).data?.id;
     if (target) await db.from('guests').update({ photo_url: data.publicUrl }).eq('id', target);
