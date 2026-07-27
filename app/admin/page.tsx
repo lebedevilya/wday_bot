@@ -127,7 +127,7 @@ async function Tasks() {
       </select>
       <input name="title_ru" defaultValue={tt?.title.ru} placeholder="RU" required className={`${input} w-56`} />
       <input name="title_en" defaultValue={tt?.title.en} placeholder="EN" className={`${input} w-44`} />
-      <input name="title_kk" defaultValue={tt?.title.kk} placeholder="KK" className={`${input} w-44`} />
+      <input name="title_kk" defaultValue={tt?.title.kk} placeholder="KZ" className={`${input} w-44`} />
       <input name="points" type="number" defaultValue={tt?.points ?? 1} className={`${input} w-16`} />
       <select name="target_guest_id" defaultValue={tt?.target_guest_id ?? ''} className={input}>
         <option value="">no fixed target</option>
@@ -153,7 +153,7 @@ async function Tasks() {
 async function Review() {
   const [{ data: submissions }, { data: photos }] = await Promise.all([
     db.from('assignments')
-      .select('*, teams(name), task_templates(title, points), target:guests!assignments_target_guest_id_fkey(name)')
+      .select('*, player:guests!assignments_guest_id_fkey(name), task_templates(title, points), target:guests!assignments_target_guest_id_fkey(name)')
       .not('photo_url', 'is', null)
       .order('submitted_at', { ascending: false })
       .limit(100),
@@ -171,7 +171,7 @@ async function Review() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={a.photo_url!} alt="" className="h-20 w-20 rounded-lg object-cover" />
               <div className="min-w-0 flex-1">
-                <p className="font-semibold">{a.teams?.name} → {title}</p>
+                <p className="font-semibold">{a.player?.name} → {title}</p>
                 <p className="text-xs text-ink-muted">
                   status: {a.status} · AI: {verdict?.match ?? '—'} {verdict?.reason ? `(${verdict.reason.slice(0, 80)})` : ''}
                 </p>

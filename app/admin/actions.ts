@@ -59,13 +59,13 @@ export async function deleteGuest(formData: FormData) {
   revalidatePath('/admin');
 }
 
-// Fix a wrong-name claim: unbind Telegram account + team so the guest is claimable again.
+// Fix a wrong-name claim: unbind Telegram/browser session so the guest is claimable again.
 export async function resetGuestBinding(formData: FormData) {
   await guard();
   const id = String(formData.get('id'));
   const { data: g } = await db.from('guests').select('telegram_user_id').eq('id', id).single();
   if (g?.telegram_user_id) await db.from('bot_state').delete().eq('telegram_user_id', g.telegram_user_id);
-  await db.from('guests').update({ telegram_user_id: null, team_id: null, status: 'inactive' }).eq('id', id);
+  await db.from('guests').update({ telegram_user_id: null, web_token: null, status: 'inactive' }).eq('id', id);
   revalidatePath('/admin');
 }
 
@@ -100,7 +100,7 @@ export async function approveSubmission(formData: FormData) {
   const { data: a } = await db.from('assignments').select('*, task_templates(points)').eq('id', id).single();
   if (a && a.status !== 'approved') {
     await awardPoints(id, (a.task_templates as { points: number }).points);
-    if (a.photo_url) await db.from('photos').insert({ url: a.photo_url, team_id: a.team_id, source: 'task' });
+    if (a.photo_url) await db.from('photos').insert({ url: a.photo_url, guest_id: a.guest_id, source: 'task' });
   }
   revalidatePath('/admin');
 }
@@ -111,8 +111,8 @@ export async function rejectSubmission(formData: FormData) {
   const { data: a } = await db.from('assignments').select('*').eq('id', id).single();
   if (!a) return;
   if (a.status === 'approved' && a.points_awarded > 0) {
-    const { data: team } = await db.from('teams').select('points').eq('id', a.team_id).single();
-    await db.from('teams').update({ points: Math.max(0, (team?.points ?? 0) - a.points_awarded) }).eq('id', a.team_id);
+    const { data: g } = await db.from('guests').select('points').eq('id', a.guest_id).single();
+    await db.from('guests').update({ points: Math.max(0, (g?.points ?? 0) - a.points_awarded) }).eq('id', a.guest_id);
     if (a.photo_url) await db.from('photos').update({ visible: false }).eq('url', a.photo_url);
   }
   await db.from('assignments').update({ status: 'rejected', points_awarded: 0 }).eq('id', id);

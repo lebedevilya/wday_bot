@@ -23,23 +23,6 @@ const dict: Dict = {
     en: '🎉 Great, {name}! You are in the game.',
     kk: '🎉 Тамаша, {name}! Сен ойындасың.',
   },
-  pair_question: {
-    ru: 'Играешь в паре с кем-то? Пара играет как одна команда с общими очками.',
-    en: 'Are you playing as a pair with someone? A pair plays as one team with shared points.',
-    kk: 'Біреумен жұп болып ойнайсың ба? Жұп бір команда ретінде ойнайды, ұпайлар ортақ.',
-  },
-  pair_yes: { ru: 'Да, в паре', en: 'Yes, as a pair', kk: 'Иә, жұппен' },
-  pair_no: { ru: 'Нет, сам(а)', en: 'No, solo', kk: 'Жоқ, жалғыз' },
-  pair_pick: {
-    ru: 'С кем играешь? Выбери из списка:',
-    en: 'Who is your partner? Pick from the list:',
-    kk: 'Кіммен ойнайсың? Тізімнен таңда:',
-  },
-  pair_done: {
-    ru: '👫 Теперь вы команда: {team}',
-    en: '👫 You are now a team: {team}',
-    kk: '👫 Енді сендер бір командасыңдар: {team}',
-  },
   tasks_header: {
     ru: '📋 Твои задания (жми на кнопку, чтобы отправить фото):',
     en: '📋 Your tasks (tap a button to submit a photo):',
@@ -67,9 +50,9 @@ const dict: Dict = {
     kk: '🤔 Тапсырма орындалғанға ұқсамайды. Қайта көр — /tasks ашып, басқа фото жібер.',
   },
   score: {
-    ru: '🏆 Команда «{team}»: {points} очков.\n{prize}',
-    en: '🏆 Team "{team}": {points} points.\n{prize}',
-    kk: '🏆 «{team}» командасы: {points} ұпай.\n{prize}',
+    ru: '🏆 {name}: {points} очков.\n{prize}',
+    en: '🏆 {name}: {points} points.\n{prize}',
+    kk: '🏆 {name}: {points} ұпай.\n{prize}',
   },
   prize_current: {
     ru: 'Текущий приз: {prize} 🧸',
@@ -113,6 +96,30 @@ const dict: Dict = {
   },
   next_page: { ru: 'Дальше ▶️', en: 'Next ▶️', kk: 'Келесі ▶️' },
   prev_page: { ru: '◀️ Назад', en: '◀️ Back', kk: '◀️ Артқа' },
+
+  // --- web version of the game (/play) ---
+  play_title: { ru: 'Игра', en: 'The game', kk: 'Ойын' },
+  play_intro: {
+    ru: 'Фотозадания, очки и плюшевые призы. Найди себя в списке гостей:',
+    en: 'Photo tasks, points and plush prizes. Find yourself in the guest list:',
+    kk: 'Фототапсырмалар, ұпайлар және плюш жүлделер. Қонақтар тізімінен өзіңді тап:',
+  },
+  search_name: { ru: 'Твое имя…', en: 'Your name…', kk: 'Есіміңіз…' },
+  nothing_found: { ru: 'Никого не нашли с таким именем', en: 'No one found with that name', kk: 'Мұндай есім табылмады' },
+  name_taken: { ru: 'Это имя уже заняли. Выбери другое.', en: 'That name was just taken. Pick another.', kk: 'Бұл есімді алып қойды. Басқасын таңда.' },
+  take_photo: { ru: 'Сделать фото', en: 'Take a photo', kk: 'Суретке түсіру' },
+  retake: { ru: 'Еще раз', en: 'Try again', kk: 'Қайтадан' },
+  my_points: { ru: 'Очков: {points}', en: '{points} points', kk: '{points} ұпай' },
+  all_done: { ru: 'Все задания выполнены! 🎉 Иди за призом.', en: 'All tasks done! 🎉 Go get your prize.', kk: 'Барлық тапсырма орындалды! 🎉 Жүлдеңді ал.' },
+  add_free_photo: { ru: 'Фото на стену', en: 'Photo to the wall', kk: 'Қабырғаға фото' },
+  add_wish: { ru: 'Пожелание', en: 'Leave a wish', kk: 'Тілек жазу' },
+  send: { ru: 'Отправить', en: 'Send', kk: 'Жіберу' },
+  cancel: { ru: 'Отмена', en: 'Cancel', kk: 'Болдырмау' },
+  saved: { ru: 'Готово! Смотри на фотостене.', en: 'Done! See it on the photo wall.', kk: 'Дайын! Фотоқабырғада қара.' },
+  upload_failed: { ru: 'Не удалось отправить. Попробуй еще раз.', en: 'Upload failed. Try again.', kk: 'Жіберілмеді. Қайта көр.' },
+  photo_too_big: { ru: 'Фото слишком большое.', en: 'That photo is too large.', kk: 'Фото тым үлкен.' },
+  open_wall: { ru: 'Фотостена дня →', en: 'Live photo wall →', kk: 'Күннің фотоқабырғасы →' },
+  prefer_telegram: { ru: 'Есть Telegram? Играй в боте', en: 'Have Telegram? Play in the bot', kk: 'Telegram бар ма? Ботта ойна' },
   help: {
     ru: 'Команды:\n/tasks — мои задания\n/score — мои очки и приз\n/wish — пожелание молодоженам\n/photo — загрузить фото на стену',
     en: 'Commands:\n/tasks — my tasks\n/score — my points and prize\n/wish — wish for the newlyweds\n/photo — upload a photo to the wall',

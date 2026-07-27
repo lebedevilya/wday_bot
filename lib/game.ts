@@ -1,20 +1,18 @@
 import { db, getSettings } from './db';
 import type { Assignment, Guest, Locale, PrizeTier, TaskTemplate } from './types';
 
-// Assign missing tasks to a team: K least-assigned core tasks + M person tasks
-// preferring targets from a different group than the team's members, least-targeted first.
+// Assign missing tasks to a player: K least-assigned core tasks + M person tasks
+// preferring targets from a different group than the player, least-targeted first.
 // Safe to call repeatedly (lazy top-up as the target pool grows).
-export async function ensureAssignments(teamId: string): Promise<void> {
+export async function ensureAssignments(guestId: string): Promise<void> {
   const settings = await getSettings();
-  const [{ data: members }, { data: existing }, { data: templates }] = await Promise.all([
-    db.from('guests').select('*').eq('team_id', teamId),
-    db.from('assignments').select('*').eq('team_id', teamId),
+  const [{ data: me }, { data: existing }, { data: templates }] = await Promise.all([
+    db.from('guests').select('*').eq('id', guestId).maybeSingle(),
+    db.from('assignments').select('*').eq('guest_id', guestId),
     db.from('task_templates').select('*').eq('active', true),
   ]);
-  if (!members?.length || !templates) return;
+  if (!me || !templates) return;
   const own = existing ?? [];
-  const memberIds = new Set(members.map((m) => m.id));
-  const memberGroups = new Set(members.map((m) => m.grp));
 
   const personTemplate = templates.find((tt) => tt.kind === 'person' && !tt.target_guest_id);
   const rows: Partial<Assignment>[] = [];
@@ -34,11 +32,11 @@ export async function ensureAssignments(teamId: string): Promise<void> {
         (tt: TaskTemplate) =>
           tt.kind === 'core' &&
           !own.some((a) => a.task_template_id === tt.id) &&
-          !(tt.target_guest_id && memberIds.has(tt.target_guest_id)),
+          tt.target_guest_id !== me.id, // never "take a photo with yourself"
       )
-      .sort((a, b) => (usage.get(a.id) ?? 0) - (usage.get(b.id) ?? 0) || Math.sign(hash(a.id + teamId) - hash(b.id + teamId)));
+      .sort((a, b) => (usage.get(a.id) ?? 0) - (usage.get(b.id) ?? 0) || Math.sign(hash(a.id + guestId) - hash(b.id + guestId)));
     for (const tt of candidates.slice(0, needCore)) {
-      rows.push({ team_id: teamId, task_template_id: tt.id, target_guest_id: tt.target_guest_id });
+      rows.push({ guest_id: guestId, task_template_id: tt.id, target_guest_id: tt.target_guest_id });
     }
   }
 
@@ -55,14 +53,14 @@ export async function ensureAssignments(teamId: string): Promise<void> {
       for (const a of targeted ?? []) targetCount.set(a.target_guest_id!, (targetCount.get(a.target_guest_id!) ?? 0) + 1);
       const alreadyTargeted = new Set(own.map((a) => a.target_guest_id).filter(Boolean));
       const candidates = (pool ?? [])
-        .filter((g: Guest) => !memberIds.has(g.id) && !alreadyTargeted.has(g.id))
+        .filter((g: Guest) => g.id !== me.id && !alreadyTargeted.has(g.id))
         .sort((a: Guest, b: Guest) => {
-          const crossA = memberGroups.has(a.grp) ? 1 : 0; // 0 = cross-group, preferred
-          const crossB = memberGroups.has(b.grp) ? 1 : 0;
-          return crossA - crossB || (targetCount.get(a.id) ?? 0) - (targetCount.get(b.id) ?? 0) || Math.sign(hash(a.id + teamId) - hash(b.id + teamId));
+          const crossA = a.grp === me.grp ? 1 : 0; // 0 = cross-group, preferred
+          const crossB = b.grp === me.grp ? 1 : 0;
+          return crossA - crossB || (targetCount.get(a.id) ?? 0) - (targetCount.get(b.id) ?? 0) || Math.sign(hash(a.id + guestId) - hash(b.id + guestId));
         });
       for (const g of candidates.slice(0, needPerson)) {
-        rows.push({ team_id: teamId, task_template_id: personTemplate.id, target_guest_id: g.id });
+        rows.push({ guest_id: guestId, task_template_id: personTemplate.id, target_guest_id: g.id });
       }
     }
   }
@@ -70,7 +68,7 @@ export async function ensureAssignments(teamId: string): Promise<void> {
   if (rows.length) await db.from('assignments').insert(rows);
 }
 
-// ponytail: deterministic pseudo-random tiebreak (Date.now/Math.random-free, stable per team)
+// ponytail: deterministic pseudo-random tiebreak (Date.now/Math.random-free, stable per player)
 function hash(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
@@ -84,12 +82,15 @@ export interface TaskView {
   done: boolean;
 }
 
-export async function getTaskList(teamId: string, locale: Locale): Promise<TaskView[]> {
+export async function getTaskList(guestId: string, locale: Locale): Promise<TaskView[]> {
   const { data: assignments } = await db
     .from('assignments')
     .select('*, task_templates(*), target:guests!assignments_target_guest_id_fkey(name)')
-    .eq('team_id', teamId)
-    .order('created_at');
+    .eq('guest_id', guestId)
+    // tie-break on id: a batch insert gives every row the same created_at, and without
+    // a stable second key the list reshuffles as soon as one row is updated
+    .order('created_at')
+    .order('id');
   return (assignments ?? []).map((a) => {
     const tt = a.task_templates as TaskTemplate;
     let title = tt.title[locale] ?? tt.title.ru;
@@ -103,11 +104,11 @@ export async function awardPoints(assignmentId: string, points: number): Promise
     .from('assignments')
     .update({ status: 'approved', points_awarded: points })
     .eq('id', assignmentId)
-    .select('team_id')
+    .select('guest_id')
     .single();
-  const { data: team } = await db.from('teams').select('points').eq('id', a!.team_id).single();
-  const total = (team?.points ?? 0) + points;
-  await db.from('teams').update({ points: total }).eq('id', a!.team_id);
+  const { data: guest } = await db.from('guests').select('points').eq('id', a!.guest_id).single();
+  const total = (guest?.points ?? 0) + points;
+  await db.from('guests').update({ points: total }).eq('id', a!.guest_id);
   return total;
 }
 

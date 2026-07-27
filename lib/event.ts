@@ -57,6 +57,7 @@ export const EVENT = {
     whereTitle: { ru: 'Где', en: 'Where', kk: 'Қайда' } as L,
     openMap: { ru: 'Открыть карту', en: 'Open the map', kk: 'Картаны ашу' } as L,
     wallLink: { ru: 'Фотостена дня →', en: 'Live photo wall →', kk: 'Күннің фотоқабырғасы →' } as L,
+    playLink: { ru: 'Игра для гостей →', en: 'The guest game →', kk: 'Қонақтар ойыны →' } as L,
     rsvpCta: { ru: 'Подтвердить присутствие', en: 'RSVP', kk: 'Қатысуды растау' } as L,
   },
 };

@@ -36,6 +36,17 @@ Mark `[x]` as completed. If we stop, resume from first unchecked item.
 - [x] Prize tiers editor (JSON settings tab)
 - [ ] (skipped for now) dedicated teams merge UI — unbind + rejoin covers it
 
+## M7 — Web version (many Kazakh guests have no Telegram)
+- [x] Drop `teams`: a pair is one guest row ("Медет + Акмарал"); points live on guests (migration 003)
+- [x] Remove pair flow from the bot (one less screen for everyone)
+- [x] `/play` — mobile browser version: name pick → cookie session → tasks → native camera submit → verify → points
+- [x] Wish + free wall photo from the browser
+- [x] `lib/images.ts`: shared upload helper; browser uploads capped at 1600px webp (Telegram compresses its own)
+- [x] Link to `/play` from the invitation footer
+- [ ] WhatsApp bot — **skipped on purpose**: needs a dedicated phone number + Meta business verification,
+      weaker UI (3 buttons / 10-row lists) and buys nothing over `/play`. Game core is adapter-ready
+      (`lib/game.ts` + `lib/verify.ts`) if this ever changes.
+
 ## M6 — Ship
 - [x] QR deep-link (t.me/BOT?start=join — bot handles any /start payload)
 - [x] scripts/set-webhook.ts (`npm run webhook`)
@@ -46,7 +57,8 @@ Mark `[x]` as completed. If we stop, resume from first unchecked item.
 - [x] Light white-pink redesign (Comfortaa + Onest, dusty-rose accent)
 - [ ] Seed real guest list + reference photos via /admin
 - [ ] Attach custom domain **wday.ilyalebe.dev** (Vercel project → Domains → add wday.ilyalebe.dev, add CNAME `wday` → cname.vercel-dns.com in ilyalebe.dev DNS; update NEXT_PUBLIC_SITE_URL + re-run `npm run webhook`)
-- [ ] Dry run with test account end-to-end
+- [ ] Dry run with test account end-to-end (both Telegram and /play)
+- [ ] Print ONE QR pointing at /play (it links onward to the bot for Telegram users)
 
 ## Blocked on Ilya
 - [ ] Supabase project → SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY

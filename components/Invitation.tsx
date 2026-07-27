@@ -315,7 +315,8 @@ export default function Invitation() {
       </section>
 
       <footer className="flex flex-col items-center gap-4 border-t border-line px-6 py-12 text-center">
-        <Link href="/wall" className="text-lg font-semibold text-accent">{t(ui.wallLink)}</Link>
+        <Link href="/play" className="text-lg font-semibold text-accent">{t(ui.playLink)}</Link>
+        <Link href="/wall" className="text-sm text-ink-muted underline">{t(ui.wallLink)}</Link>
         <p className="text-sm text-ink-muted">{t(EVENT.names)} · {t(EVENT.dateLine)}</p>
       </footer>
     </main>

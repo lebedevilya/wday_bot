@@ -6,8 +6,8 @@ type Locale = 'ru' | 'kk' | 'en';
 
 interface WallPhoto { id: string; url: string; thumb_url: string | null; created_at: string }
 interface WallWish { id: string; text: string; photo_url: string | null; thumb_url: string | null; created_at: string; author: string | null }
-interface WallTeam { id: string; name: string; points: number }
-interface WallData { photos: WallPhoto[]; wishes: WallWish[]; leaderboard: WallTeam[] }
+interface WallPlayer { id: string; name: string; points: number }
+interface WallData { photos: WallPhoto[]; wishes: WallWish[]; leaderboard: WallPlayer[] }
 
 const ui: Record<string, Record<Locale, string>> = {
   subtitle: {
@@ -100,15 +100,15 @@ export default function Wall() {
         <section aria-label={t('leaderboard')} className="mx-auto mb-12 w-full max-w-3xl">
           <h2 className="mb-4 text-center text-xl font-semibold text-ink-muted">{t('leaderboard')}</h2>
           <ol className="overflow-hidden rounded-2xl border border-line bg-surface">
-            {data.leaderboard.slice(0, 10).map((team, i) => (
+            {data.leaderboard.slice(0, 10).map((p, i) => (
               <li
-                key={team.id}
+                key={p.id}
                 className="flex items-center gap-4 border-b border-line px-5 py-3 text-lg last:border-b-0"
               >
                 <span className="w-8 text-center text-xl">{medals[i] ?? i + 1}</span>
-                <span className="min-w-0 flex-1 truncate font-semibold">{team.name}</span>
+                <span className="min-w-0 flex-1 truncate font-semibold">{p.name}</span>
                 <span className="whitespace-nowrap text-accent">
-                  {team.points} <span className="text-sm text-ink-muted">{t('points')}</span>
+                  {p.points} <span className="text-sm text-ink-muted">{t('points')}</span>
                 </span>
               </li>
             ))}

@@ -10,16 +10,11 @@ export interface Guest {
   grp: GuestGroup;
   status: GuestStatus;
   telegram_user_id: number | null;
-  team_id: string | null;
+  web_token: string | null;
+  points: number;
   locale: Locale;
   rsvp_status: 'pending' | 'yes' | 'no';
   rsvp_party: number;
-}
-
-export interface Team {
-  id: string;
-  name: string;
-  points: number;
 }
 
 export interface TaskTemplate {
@@ -33,7 +28,7 @@ export interface TaskTemplate {
 
 export interface Assignment {
   id: string;
-  team_id: string;
+  guest_id: string;
   task_template_id: string;
   target_guest_id: string | null;
   status: 'pending' | 'approved' | 'rejected';
@@ -58,5 +53,4 @@ export interface BotState {
   locale?: Locale;
   // assignment id awaiting a photo, or 'free' / 'wish' modes
   awaiting?: { kind: 'task'; assignment_id: string } | { kind: 'free' } | { kind: 'wish' };
-  pair_first_guest_id?: string;
 }

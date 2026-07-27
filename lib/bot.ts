@@ -47,35 +47,32 @@ async function unclaimedGuests(): Promise<Guest[]> {
   return (data as Guest[]) ?? [];
 }
 
-function guestPageKeyboard(guests: Guest[], page: number, prefix: 'claim' | 'pairclaim', locale: Locale): InlineKeyboard {
+function guestPageKeyboard(guests: Guest[], page: number, locale: Locale): InlineKeyboard {
   const kb = new InlineKeyboard();
   const slice = guests.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  for (const g of slice) kb.text(g.name, `${prefix}:${g.id}`).row();
-  const nav = prefix === 'claim' ? 'pg' : 'pairpg';
-  if (page > 0) kb.text(t(locale, 'prev_page'), `${nav}:${page - 1}`);
-  if ((page + 1) * PAGE_SIZE < guests.length) kb.text(t(locale, 'next_page'), `${nav}:${page + 1}`);
+  for (const g of slice) kb.text(g.name, `claim:${g.id}`).row();
+  if (page > 0) kb.text(t(locale, 'prev_page'), `pg:${page - 1}`);
+  if ((page + 1) * PAGE_SIZE < guests.length) kb.text(t(locale, 'next_page'), `pg:${page + 1}`);
   return kb;
 }
 
 // --- flows ---
 
-async function showNamePicker(ctx: Context, page: number, prefix: 'claim' | 'pairclaim' = 'claim') {
+async function showNamePicker(ctx: Context, page: number) {
   const locale = await loc(ctx);
   const guests = await unclaimedGuests();
-  const mine = await getGuest(ctx.from!.id);
-  const list = prefix === 'pairclaim' && mine ? guests.filter((g) => g.id !== mine.id) : guests;
-  if (!list.length) return ctx.reply(t(locale, 'no_names_left'));
-  const text = t(locale, prefix === 'claim' ? 'pick_name' : 'pair_pick');
-  const kb = guestPageKeyboard(list, page, prefix, locale);
+  if (!guests.length) return ctx.reply(t(locale, 'no_names_left'));
+  const text = t(locale, 'pick_name');
+  const kb = guestPageKeyboard(guests, page, locale);
   if (ctx.callbackQuery) await ctx.editMessageText(text, { reply_markup: kb }).catch(() => ctx.reply(text, { reply_markup: kb }));
   else await ctx.reply(text, { reply_markup: kb });
 }
 
 async function showTasks(ctx: Context) {
   const guest = await getGuest(ctx.from!.id);
-  if (!guest?.team_id) return ctx.reply(t(await loc(ctx), 'not_joined'));
-  await ensureAssignments(guest.team_id); // lazy top-up as more guests join
-  const tasks = await getTaskList(guest.team_id, guest.locale);
+  if (guest?.status !== 'playing') return ctx.reply(t(await loc(ctx), 'not_joined'));
+  await ensureAssignments(guest.id); // lazy top-up as more guests join
+  const tasks = await getTaskList(guest.id, guest.locale);
   const lines = tasks.map((tv, i) => `${tv.done ? '✅' : '▫️'} ${i + 1}. ${tv.title} (+${tv.points})`);
   const kb = new InlineKeyboard();
   tasks.forEach((tv, i) => {
@@ -85,7 +82,7 @@ async function showTasks(ctx: Context) {
 }
 
 async function finishJoin(ctx: Context, guest: Guest) {
-  await ensureAssignments(guest.team_id!);
+  await ensureAssignments(guest.id);
   await ctx.reply(t(guest.locale, 'joined', { name: guest.name }));
   await ctx.reply(t(guest.locale, 'help'));
   await showTasks(ctx);
@@ -95,7 +92,7 @@ async function finishJoin(ctx: Context, guest: Guest) {
 
 bot.command('start', async (ctx) => {
   const guest = await getGuest(ctx.from!.id);
-  if (guest?.team_id) return showTasks(ctx);
+  if (guest?.status === 'playing') return showTasks(ctx);
   await ctx.reply(t('ru', 'pick_locale'), { reply_markup: localeKeyboard() });
 });
 
@@ -103,16 +100,13 @@ bot.command('tasks', showTasks);
 
 bot.command('score', async (ctx) => {
   const guest = await getGuest(ctx.from!.id);
-  if (!guest?.team_id) return ctx.reply(t(await loc(ctx), 'not_joined'));
-  const [{ data: team }, settings] = await Promise.all([
-    db.from('teams').select('*').eq('id', guest.team_id).single(),
-    getSettings(),
-  ]);
-  const prize = prizeFor(team!.points, settings.prize_tiers, guest.locale);
+  if (guest?.status !== 'playing') return ctx.reply(t(await loc(ctx), 'not_joined'));
+  const settings = await getSettings();
+  const prize = prizeFor(guest.points, settings.prize_tiers, guest.locale);
   await ctx.reply(
     t(guest.locale, 'score', {
-      team: team!.name,
-      points: team!.points,
+      name: guest.name,
+      points: guest.points,
       prize: prize ? t(guest.locale, 'prize_current', { prize }) : t(guest.locale, 'prize_none'),
     }),
   );
@@ -147,7 +141,7 @@ bot.on('callback_query:data', async (ctx) => {
     const guest = await getGuest(tgId);
     if (guest) {
       await db.from('guests').update({ locale }).eq('id', guest.id);
-      if (guest.team_id) return showTasks(ctx);
+      if (guest.status === 'playing') return showTasks(ctx);
     } else {
       await setState(tgId, { ...(await getState(tgId)), locale });
     }
@@ -155,57 +149,21 @@ bot.on('callback_query:data', async (ctx) => {
   }
 
   if (data.startsWith('pg:')) return showNamePicker(ctx, Number(data.slice(3)));
-  if (data.startsWith('pairpg:')) return showNamePicker(ctx, Number(data.slice(7)), 'pairclaim');
 
   if (data.startsWith('claim:')) {
     const guestId = data.slice(6);
     const locale = await loc(ctx);
     const { data: g } = await db.from('guests').select('*').eq('id', guestId).maybeSingle();
-    if (!g || g.telegram_user_id) return showNamePicker(ctx, 0); // taken meanwhile
-    let teamId = g.team_id;
-    if (!teamId) {
-      const { data: team } = await db.from('teams').insert({ name: g.name }).select('id').single();
-      teamId = team!.id;
-    }
-    await db
-      .from('guests')
-      .update({ telegram_user_id: tgId, locale, status: 'playing', team_id: teamId })
-      .eq('id', guestId);
-    if (g.team_id) {
-      // partner already created the team — just bind and play
-      const guest = (await getGuest(tgId))!;
-      return finishJoin(ctx, guest);
-    }
-    const kb = new InlineKeyboard().text(t(locale, 'pair_yes'), 'pair:yes').text(t(locale, 'pair_no'), 'pair:no');
-    return ctx.editMessageText(t(locale, 'pair_question'), { reply_markup: kb }).catch(() => ctx.reply(t(locale, 'pair_question'), { reply_markup: kb }));
-  }
-
-  if (data === 'pair:no') {
-    const guest = await getGuest(tgId);
-    if (guest) return finishJoin(ctx, guest);
-    return;
-  }
-
-  if (data === 'pair:yes') return showNamePicker(ctx, 0, 'pairclaim');
-
-  if (data.startsWith('pairclaim:')) {
-    const partnerId = data.slice(10);
-    const me = await getGuest(tgId);
-    if (!me?.team_id) return;
-    const { data: partner } = await db.from('guests').select('*').eq('id', partnerId).maybeSingle();
-    if (!partner || partner.telegram_user_id || partner.team_id) return showNamePicker(ctx, 0, 'pairclaim');
-    await db.from('guests').update({ team_id: me.team_id, status: 'playing' }).eq('id', partnerId);
-    const teamName = `${me.name} + ${partner.name}`;
-    await db.from('teams').update({ name: teamName }).eq('id', me.team_id);
-    await ctx.reply(t(me.locale, 'pair_done', { team: teamName }));
-    return finishJoin(ctx, me);
+    if (!g || g.telegram_user_id || g.web_token) return showNamePicker(ctx, 0); // taken meanwhile
+    await db.from('guests').update({ telegram_user_id: tgId, locale, status: 'playing' }).eq('id', guestId);
+    return finishJoin(ctx, (await getGuest(tgId))!);
   }
 
   if (data.startsWith('sub:')) {
     const guest = await getGuest(tgId);
     if (!guest) return;
     await setState(tgId, { awaiting: { kind: 'task', assignment_id: data.slice(4) } });
-    const tasks = await getTaskList(guest.team_id!, guest.locale);
+    const tasks = await getTaskList(guest.id, guest.locale);
     const tv = tasks.find((x) => x.assignment.id === data.slice(4));
     return ctx.reply(t(guest.locale, 'send_photo_now', { task: tv?.title ?? '' }));
   }
@@ -216,7 +174,7 @@ bot.on('callback_query:data', async (ctx) => {
 bot.on('message:photo', async (ctx) => {
   const tgId = ctx.from.id;
   const guest = await getGuest(tgId);
-  if (!guest?.team_id) return ctx.reply(t(await loc(ctx), 'not_joined'));
+  if (guest?.status !== 'playing') return ctx.reply(t(await loc(ctx), 'not_joined'));
   const state = await getState(tgId);
   const awaiting = state.awaiting ?? { kind: 'free' as const }; // unsolicited photo → wall
   const fileId = ctx.message.photo.at(-1)!.file_id;
@@ -240,20 +198,20 @@ bot.on('message:photo', async (ctx) => {
     await setState(tgId, { ...state, awaiting: undefined });
     if (verdict.match === 'no') return ctx.reply(t(guest.locale, 'rejected'));
     const total = await awardPoints(a.id, tt.points);
-    await db.from('photos').insert({ url, thumb_url: thumbUrl, team_id: guest.team_id, source: 'task' });
+    await db.from('photos').insert({ url, thumb_url: thumbUrl, guest_id: guest.id, source: 'task' });
     return ctx.reply(t(guest.locale, 'approved', { points: tt.points, total }));
   }
 
   if (awaiting.kind === 'wish') {
     const { url, thumbUrl } = await storeTelegramPhoto(fileId);
-    await db.from('wishes').insert({ team_id: guest.team_id, text: ctx.message.caption ?? '', photo_url: url, thumb_url: thumbUrl });
+    await db.from('wishes').insert({ guest_id: guest.id, text: ctx.message.caption ?? '', photo_url: url, thumb_url: thumbUrl });
     await setState(tgId, { ...state, awaiting: undefined });
     return ctx.reply(t(guest.locale, 'wish_saved'));
   }
 
   // free
   const { url, thumbUrl } = await storeTelegramPhoto(fileId);
-  await db.from('photos').insert({ url, thumb_url: thumbUrl, team_id: guest.team_id, source: 'free' });
+  await db.from('photos').insert({ url, thumb_url: thumbUrl, guest_id: guest.id, source: 'free' });
   await setState(tgId, { ...state, awaiting: undefined });
   return ctx.reply(t(guest.locale, 'photo_saved', { url: `${SITE}/wall` }));
 });
@@ -265,7 +223,7 @@ bot.on('message:text', async (ctx) => {
   const guest = await getGuest(tgId);
   const state = await getState(tgId);
   if (guest && state.awaiting?.kind === 'wish') {
-    await db.from('wishes').insert({ team_id: guest.team_id, text: ctx.message.text });
+    await db.from('wishes').insert({ guest_id: guest.id, text: ctx.message.text });
     await setState(tgId, { ...state, awaiting: undefined });
     return ctx.reply(t(guest.locale, 'wish_saved'));
   }
