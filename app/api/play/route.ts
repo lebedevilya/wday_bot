@@ -59,6 +59,7 @@ export async function POST(req: Request) {
     const me = await currentPlayer();
     if (!me) return NextResponse.json({ error: 'not_joined' }, { status: 401 });
     if (action === 'lang') return await setLang(me, form);
+    if (action === 'leave') return await leave(me);
     if (action === 'wish') return await wish(me, form);
     if (action === 'submit' || action === 'free') return await photo(me, form, action);
     return NextResponse.json({ error: 'bad_action' }, { status: 400 });
@@ -97,6 +98,14 @@ async function setLang(me: Guest, form: FormData) {
   const locale = String(form.get('locale') ?? 'ru') as Locale;
   await db.from('guests').update({ locale }).eq('id', me.id);
   return NextResponse.json(await state({ ...me, locale }));
+}
+
+// Wrong name tapped from the shared QR: release it so someone else can claim it.
+// Points and assignments stay put — rejoining the same name resumes where you left off.
+async function leave(me: Guest) {
+  await db.from('guests').update({ web_token: null, status: 'inactive' }).eq('id', me.id);
+  (await cookies()).delete(COOKIE);
+  return NextResponse.json(await state(null));
 }
 
 async function wish(me: Guest, form: FormData) {

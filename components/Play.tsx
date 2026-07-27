@@ -123,6 +123,14 @@ function Join({ state, locale, tr, post, setState, onError }: {
   return (
     <section className="flex flex-col gap-4">
       <p className="text-ink-muted">{tr('play_intro')}</p>
+      {/* above the list on purpose: with ~50 guests the bottom of the page is far below the fold */}
+      <a
+        href={BOT_URL}
+        className={`${card} flex items-center justify-between gap-3 px-4 py-3.5 font-semibold text-accent`}
+      >
+        {tr('prefer_telegram')}
+        <span aria-hidden>→</span>
+      </a>
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -146,7 +154,6 @@ function Join({ state, locale, tr, post, setState, onError }: {
           </li>
         ))}
       </ul>
-      <a href={BOT_URL} className="mt-2 text-center text-sm text-ink-muted underline">{tr('prefer_telegram')}</a>
     </section>
   );
 }
@@ -241,6 +248,17 @@ function Tasks({ state, tr, post, reload, onError }: {
       {wishOpen && <WishForm tr={tr} post={post} onDone={() => setWishOpen(false)} onError={onError} />}
 
       <Link href="/wall" className="mt-2 text-center text-sm text-ink-muted underline">{tr('open_wall')}</Link>
+      <button
+        onClick={async () => {
+          const f = new FormData();
+          f.set('action', 'leave');
+          await post(f);
+          await reload();
+        }}
+        className="text-center text-sm text-ink-muted underline"
+      >
+        {tr('not_me')}
+      </button>
     </section>
   );
 }

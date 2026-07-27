@@ -119,6 +119,7 @@ const dict: Dict = {
   upload_failed: { ru: 'Не удалось отправить. Попробуй еще раз.', en: 'Upload failed. Try again.', kk: 'Жіберілмеді. Қайта көр.' },
   photo_too_big: { ru: 'Фото слишком большое.', en: 'That photo is too large.', kk: 'Фото тым үлкен.' },
   open_wall: { ru: 'Фотостена дня →', en: 'Live photo wall →', kk: 'Күннің фотоқабырғасы →' },
+  not_me: { ru: 'Это не я — сменить имя', en: 'Not me — change name', kk: 'Бұл мен емес — есімді өзгерту' },
   prefer_telegram: { ru: 'Есть Telegram? Играй в боте', en: 'Have Telegram? Play in the bot', kk: 'Telegram бар ма? Ботта ойна' },
   help: {
     ru: 'Команды:\n/tasks — мои задания\n/score — мои очки и приз\n/wish — пожелание молодоженам\n/photo — загрузить фото на стену',
