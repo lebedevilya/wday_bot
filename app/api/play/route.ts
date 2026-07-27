@@ -119,7 +119,7 @@ async function photo(me: Guest, form: FormData, action: 'submit' | 'free') {
   const file = form.get('photo') as File | null;
   if (!file || file.size === 0) return NextResponse.json({ error: 'no_photo' }, { status: 400 });
   if (file.size > MAX_UPLOAD) return NextResponse.json({ error: 'too_big' }, { status: 413 });
-  const { url, thumbUrl, buffer, mime } = await storeUploadedPhoto(Buffer.from(await file.arrayBuffer()));
+  const { url, thumbUrl, thumb } = await storeUploadedPhoto(Buffer.from(await file.arrayBuffer()));
 
   if (action === 'free') {
     await db.from('photos').insert({ url, thumb_url: thumbUrl, guest_id: me.id, source: 'free' });
@@ -139,7 +139,7 @@ async function photo(me: Guest, form: FormData, action: 'submit' | 'free') {
   let title = tt.title[me.locale] ?? tt.title.ru;
   if (target) title = title.replaceAll('{name}', target.name);
   const reference = target?.photo_url ? await fetchImage(target.photo_url) : null;
-  const verdict = await verifyPhoto(buffer, title, reference, mime);
+  const verdict = await verifyPhoto(thumb, title, reference);
   await db
     .from('assignments')
     .update({ photo_url: url, ai_verdict: verdict, submitted_at: new Date().toISOString() })

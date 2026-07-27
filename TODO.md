@@ -63,6 +63,6 @@ Mark `[x]` as completed. If we stop, resume from first unchecked item.
 ## Blocked on Ilya
 - [ ] Supabase project → SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 - [ ] @BotFather token → TELEGRAM_BOT_TOKEN
-- [ ] Google AI Studio key → GEMINI_API_KEY
+- [x] ~~Google AI Studio key~~ → now OPENAI_API_KEY (set in Vercel production + development; preview env refused via CLI, add in dashboard if preview deploys ever matter)
 - [ ] Vercel account link
-- [ ] ⚠️ Gemini API credits DEPLETED (429) — top up / switch billing before wedding, verification currently auto-approves everything
+- [x] ~~Gemini credits depleted~~ → switched verification to OpenAI `gpt-5.4-mini` (measured ~$0.40 for the whole event; $3 balance is ample). Gemini dropped entirely.

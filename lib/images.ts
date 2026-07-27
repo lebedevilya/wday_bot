@@ -5,8 +5,7 @@ import { db } from './db';
 export interface StoredPhoto {
   url: string; // full version, opened when a wall thumbnail is clicked
   thumbUrl: string; // ~640px webp for the wall grid
-  buffer: Buffer; // full bytes, reused for AI verify
-  mime: string;
+  thumb: Buffer; // thumbnail bytes, reused for AI verify (cheaper than full size)
 }
 
 // Blob, not Buffer: raw Buffers get UTF-8-mangled somewhere in the upload path on Vercel.
@@ -39,11 +38,12 @@ export async function storeTelegramPhoto(fileId: string): Promise<StoredPhoto> {
   const id = randomUUID();
   const ext = filePath.split('.').pop() ?? 'jpg';
   const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+  const thumb = await thumbnail(original);
   const [url, thumbUrl] = await Promise.all([
     upload(`${id}.${ext}`, original, mime),
-    thumbnail(original).then((t) => upload(`${id}-thumb.webp`, t, 'image/webp')),
+    upload(`${id}-thumb.webp`, thumb, 'image/webp'),
   ]);
-  return { url, thumbUrl, buffer: original, mime };
+  return { url, thumbUrl, thumb };
 }
 
 // Browser upload straight off a phone camera (3-12MB): nothing compressed it for
@@ -55,11 +55,12 @@ export async function storeUploadedPhoto(bytes: Buffer): Promise<StoredPhoto> {
     .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
     .webp({ quality: 82 })
     .toBuffer();
+  const thumb = await thumbnail(full);
   const [url, thumbUrl] = await Promise.all([
     upload(`${id}.webp`, full, 'image/webp'),
-    thumbnail(full).then((t) => upload(`${id}-thumb.webp`, t, 'image/webp')),
+    upload(`${id}-thumb.webp`, thumb, 'image/webp'),
   ]);
-  return { url, thumbUrl, buffer: full, mime: 'image/webp' };
+  return { url, thumbUrl, thumb };
 }
 
 // Fetch an already-stored photo (e.g. a guest reference photo) as a buffer for AI verify.
