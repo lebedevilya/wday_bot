@@ -75,6 +75,12 @@ function hash(s: string): number {
   return h;
 }
 
+// "Ольга (мама Ильи)" — a person-task target needs the relation, or a guest from the
+// other side of the family has no idea who to look for.
+export function targetLabel(t: { name: string; relation?: string | null }): string {
+  return t.relation ? `${t.name} (${t.relation})` : t.name;
+}
+
 export interface TaskView {
   assignment: Assignment;
   title: string;
@@ -85,7 +91,7 @@ export interface TaskView {
 export async function getTaskList(guestId: string, locale: Locale): Promise<TaskView[]> {
   const { data: assignments } = await db
     .from('assignments')
-    .select('*, task_templates(*), target:guests!assignments_target_guest_id_fkey(name)')
+    .select('*, task_templates(*), target:guests!assignments_target_guest_id_fkey(name, relation)')
     .eq('guest_id', guestId)
     // tie-break on id: a batch insert gives every row the same created_at, and without
     // a stable second key the list reshuffles as soon as one row is updated
@@ -94,7 +100,9 @@ export async function getTaskList(guestId: string, locale: Locale): Promise<Task
   return (assignments ?? []).map((a) => {
     const tt = a.task_templates as TaskTemplate;
     let title = tt.title[locale] ?? tt.title.ru;
-    if (a.target && tt.kind === 'person') title = title.replaceAll('{name}', (a.target as { name: string }).name);
+    if (a.target && tt.kind === 'person') {
+      title = title.replaceAll('{name}', targetLabel(a.target as { name: string; relation: string | null }));
+    }
     return { assignment: a as Assignment, title, points: tt.points, done: a.status === 'approved' };
   });
 }

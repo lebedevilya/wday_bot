@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { randomUUID } from 'crypto';
 import { db, getSettings } from '@/lib/db';
-import { ensureAssignments, getTaskList, awardPoints, prizeFor } from '@/lib/game';
+import { ensureAssignments, getTaskList, awardPoints, prizeFor, targetLabel } from '@/lib/game';
 import { storeUploadedPhoto, fetchImage } from '@/lib/images';
 import { verifyPhoto } from '@/lib/verify';
 import type { Guest, Locale, TaskTemplate } from '@/lib/types';
@@ -128,16 +128,16 @@ async function photo(me: Guest, form: FormData, action: 'submit' | 'free') {
 
   const { data: a } = await db
     .from('assignments')
-    .select('*, task_templates(*), target:guests!assignments_target_guest_id_fkey(name, photo_url)')
+    .select('*, task_templates(*), target:guests!assignments_target_guest_id_fkey(name, relation, photo_url)')
     .eq('id', String(form.get('assignment_id') ?? ''))
     .eq('guest_id', me.id) // can only submit your own task
     .maybeSingle();
   if (!a || a.status === 'approved') return NextResponse.json({ error: 'no_task' }, { status: 404 });
 
   const tt = a.task_templates as TaskTemplate;
-  const target = a.target as { name: string; photo_url: string | null } | null;
+  const target = a.target as { name: string; relation: string | null; photo_url: string | null } | null;
   let title = tt.title[me.locale] ?? tt.title.ru;
-  if (target) title = title.replaceAll('{name}', target.name);
+  if (target) title = title.replaceAll('{name}', targetLabel(target));
   const reference = target?.photo_url ? await fetchImage(target.photo_url) : null;
   const verdict = await verifyPhoto(thumb, title, reference);
   await db

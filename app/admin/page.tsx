@@ -66,7 +66,8 @@ function GuestFields({ g, hideName }: { g?: Guest; hideName?: boolean }) {
       <select name="status" defaultValue={g?.status ?? 'inactive'} className={input}>
         {STATUSES.map((x) => <option key={x}>{x}</option>)}
       </select>
-      <input name="phone" defaultValue={g?.phone ?? ''} placeholder="Phone" className={`${input} w-32`} />
+      <input name="relation" defaultValue={g?.relation ?? ''} placeholder="кто это (мама Ильи)" className={`${input} w-40`} />
+      <input name="phone" defaultValue={g?.phone ?? ''} placeholder="Phone" className={`${input} w-28`} />
       <input name="photo" type="file" accept="image/*" className="text-xs text-ink-muted" />
       <button className={btn}>Save</button>
     </>
@@ -77,7 +78,9 @@ async function Guests({ q, grp, st }: { q: string; grp: string; st: string }) {
   // Filtering runs in the query, so it keeps working once the list is 50 guests long.
   // Plain GET form + searchParams: no client JS, and the filtered view is linkable.
   let query = db.from('guests').select('*').order('name');
-  if (q.trim()) query = query.ilike('name', `%${q.trim()}%`);
+  // strip the characters that would break PostgREST's or() grammar before interpolating
+  const needle = q.trim().replace(/[,()]/g, '');
+  if (needle) query = query.or(`name.ilike.%${needle}%,relation.ilike.%${needle}%`);
   if (grp) query = query.eq('grp', grp);
   if (st) query = query.eq('status', st);
   const [{ data: guests }, { count: total }] = await Promise.all([
@@ -103,7 +106,7 @@ async function Guests({ q, grp, st }: { q: string; grp: string; st: string }) {
 
       <form method="get" action="/admin" className="flex flex-wrap items-center gap-2 rounded-xl bg-surface-2 p-3">
         <input type="hidden" name="tab" value="guests" />
-        <input name="q" defaultValue={q} placeholder="Search name…" aria-label="Search by name" className={`${input} w-48`} />
+        <input name="q" defaultValue={q} placeholder="Search name or relation…" aria-label="Search by name or relation" className={`${input} w-48`} />
         <select name="grp" defaultValue={grp} aria-label="Filter by group" className={input}>
           <option value="">all groups</option>
           {GROUPS.map((x) => <option key={x} value={x}>{x}</option>)}
@@ -129,7 +132,7 @@ async function Guests({ q, grp, st }: { q: string; grp: string; st: string }) {
         // key includes the mutable fields: these inputs are uncontrolled, so defaultValue
         // only applies on mount — without this the row keeps showing pre-save values
         <div
-          key={`${g.id}:${g.name}:${g.grp}:${g.status}:${g.phone ?? ''}:${g.telegram_user_id ?? ''}:${g.web_token ?? ''}:${g.photo_url ?? ''}`}
+          key={`${g.id}:${g.name}:${g.relation ?? ''}:${g.grp}:${g.status}:${g.phone ?? ''}:${g.telegram_user_id ?? ''}:${g.web_token ?? ''}:${g.photo_url ?? ''}`}
           className="flex flex-wrap items-center gap-2 rounded-xl bg-surface p-3"
         >
           <Link href={`/admin/guest/${g.id}`} title="Open guest page">
@@ -138,11 +141,11 @@ async function Guests({ q, grp, st }: { q: string; grp: string; st: string }) {
               ? <img src={g.photo_url} alt="" className="h-10 w-10 rounded-full object-cover" />
               : <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2 text-xs">—</span>}
           </Link>
-          <Link
-            href={`/admin/guest/${g.id}`}
-            className="w-40 shrink-0 truncate font-semibold text-accent underline decoration-transparent transition hover:decoration-inherit"
-          >
-            {g.name}
+          <Link href={`/admin/guest/${g.id}`} className="w-44 shrink-0 leading-tight">
+            <span className="block truncate font-semibold text-accent underline decoration-transparent transition hover:decoration-inherit">
+              {g.name}
+            </span>
+            {g.relation && <span className="block truncate text-xs text-ink-muted">{g.relation}</span>}
           </Link>
           <form action={saveGuest} className="flex flex-wrap items-center gap-2">
             <GuestFields g={g} hideName />

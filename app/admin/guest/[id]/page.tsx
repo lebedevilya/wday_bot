@@ -6,6 +6,7 @@ import {
   isAdmin, saveGuest, resetGuestBinding, resetGuestProgress,
   approveSubmission, rejectSubmission, hidePhoto,
 } from '../../actions';
+import { targetLabel } from '@/lib/game';
 import { Flash, GROUPS, STATUSES, btn, btnGhost, input } from '../../ui';
 
 export const dynamic = 'force-dynamic';
@@ -33,7 +34,7 @@ export default async function GuestPage({
     db.from('guests').select('*').eq('id', id).maybeSingle(),
     db
       .from('assignments')
-      .select('*, task_templates(*), target:guests!assignments_target_guest_id_fkey(name)')
+      .select('*, task_templates(*), target:guests!assignments_target_guest_id_fkey(name, relation)')
       .eq('guest_id', id)
       .order('created_at')
       .order('id'),
@@ -58,6 +59,7 @@ export default async function GuestPage({
           : <span className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2 text-xs text-ink-muted">no ref</span>}
         <div>
           <h1 className="text-2xl font-bold">{g.name}</h1>
+          {g.relation && <p className="text-ink-muted">{g.relation}</p>}
           <p className="text-sm text-ink-muted">
             {g.grp} · {g.status} · {g.points} pt
             {g.telegram_user_id ? ` · telegram ${g.telegram_user_id}` : ''}
@@ -82,6 +84,7 @@ export default async function GuestPage({
           <select name="status" defaultValue={g.status} className={input}>
             {STATUSES.map((x) => <option key={x}>{x}</option>)}
           </select>
+          <input name="relation" defaultValue={g.relation ?? ''} placeholder="кто это (мама Ильи)" className={`${input} w-44`} />
           <input name="phone" defaultValue={g.phone ?? ''} placeholder="Phone" className={`${input} w-32`} />
           <input name="photo" type="file" accept="image/*" className="text-xs text-ink-muted" />
           <button className={btn}>Save</button>
@@ -114,8 +117,8 @@ export default async function GuestPage({
         <div className="flex flex-col gap-2">
           {rows.map((a) => {
             const tt = a.task_templates as TaskTemplate;
-            const target = a.target as { name: string } | null;
-            const title = (tt.title.ru ?? '').replaceAll('{name}', target?.name ?? '…');
+            const target = a.target as { name: string; relation: string | null } | null;
+            const title = (tt.title.ru ?? '').replaceAll('{name}', target ? targetLabel(target) : '…');
             const verdict = a.ai_verdict as { match?: string; reason?: string } | null;
             return (
               <div key={a.id} className="rounded-xl bg-surface p-3">

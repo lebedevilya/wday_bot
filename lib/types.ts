@@ -5,6 +5,7 @@ export type GuestStatus = 'inactive' | 'target' | 'playing';
 export interface Guest {
   id: string;
   name: string;
+  relation: string | null;
   photo_url: string | null;
   phone: string | null;
   grp: GuestGroup;

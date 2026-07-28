@@ -4,6 +4,9 @@
 create table guests (
   id uuid primary key default gen_random_uuid(),
   name text not null,
+  -- "who is this": мама Ильи, тётя Айгуль. Person-task text uses it so guests from the
+  -- other side of the family know who they are looking for.
+  relation text,
   photo_url text,
   phone text,
   grp text not null check (grp in ('kids','aigul_family','aigul_friends','ilya_family','ilya_friends')),

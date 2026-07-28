@@ -1,7 +1,7 @@
 import { Bot, Context, InlineKeyboard } from 'grammy';
 import { db } from './db';
 import { t } from './i18n';
-import { ensureAssignments, getTaskList, awardPoints, prizeFor } from './game';
+import { ensureAssignments, getTaskList, awardPoints, prizeFor, targetLabel } from './game';
 import { getSettings } from './db';
 import { storeTelegramPhoto, fetchImage } from './images';
 import { verifyPhoto } from './verify';
@@ -184,14 +184,14 @@ bot.on('message:photo', async (ctx) => {
     const { url, thumbUrl, thumb } = await storeTelegramPhoto(fileId);
     const { data: a } = await db
       .from('assignments')
-      .select('*, task_templates(*), target:guests!assignments_target_guest_id_fkey(name, photo_url)')
+      .select('*, task_templates(*), target:guests!assignments_target_guest_id_fkey(name, relation, photo_url)')
       .eq('id', awaiting.assignment_id)
       .single();
     if (!a || a.status === 'approved') return;
     const tt = a.task_templates as TaskTemplate;
-    const target = a.target as { name: string; photo_url: string | null } | null;
+    const target = a.target as { name: string; relation: string | null; photo_url: string | null } | null;
     let title = tt.title[guest.locale] ?? tt.title.ru;
-    if (target) title = title.replaceAll('{name}', target.name);
+    if (target) title = title.replaceAll('{name}', targetLabel(target));
     const reference = target?.photo_url ? await fetchImage(target.photo_url) : null;
     const verdict = await verifyPhoto(thumb, title, reference);
     await db.from('assignments').update({ photo_url: url, ai_verdict: verdict, submitted_at: new Date().toISOString() }).eq('id', a.id);

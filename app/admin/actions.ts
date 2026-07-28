@@ -59,6 +59,7 @@ export async function saveGuest(formData: FormData) {
   if (!name) done('guests', 'name_required');
   const row = {
     name,
+    relation: String(formData.get('relation') ?? '').trim() || null,
     phone: String(formData.get('phone') ?? '') || null,
     grp: String(formData.get('grp')),
     status: String(formData.get('status')),
