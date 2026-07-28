@@ -1,5 +1,5 @@
-// All invitation content in one place. Replace the TODO placeholders with real
-// details — nothing else needs to change.
+// All invitation content in one place: names, date, schedule, venue, UI strings.
+// Edit here and every locale of the invitation follows — nothing else to change.
 import type { Locale } from './types';
 
 type L<T = string> = Record<Locale, T>;
@@ -12,11 +12,13 @@ export const EVENT = {
     en: 'We are getting married — and we would love to share this day with you',
     kk: 'Біз үйленеміз — осы күнді сіздермен бөліскіміз келеді',
   } as L,
-  // TODO: real venue + address + city
-  venueName: { ru: 'Ресторан «TODO»', en: '“TODO” restaurant', kk: '«TODO» мейрамханасы' } as L,
-  venueAddress: { ru: 'г. Город, ул. Адрес, 1', en: 'City, Address st., 1', kk: 'Қала, Мекенжай к-сі, 1' } as L,
-  // TODO: real map link (2GIS / Google / Yandex)
-  mapUrl: 'https://go.2gis.com/TODO',
+  venueName: { ru: 'Tau Resort', en: 'Tau Resort', kk: 'Tau Resort' } as L,
+  venueAddress: {
+    ru: 'ул. Жамбыла Жабаева, 21, с. Бескайнар, Талгарский район, Алматинская область',
+    en: '21 Zhambyl Zhabayev St., Beskainar, Talgar District, Almaty Region',
+    kk: 'Жамбыл Жабаев көшесі, 21, Бесқайнар ауылы, Талғар ауданы, Алматы облысы',
+  } as L,
+  mapUrl: 'https://2gis.kz/almaty/geo/70000001038194574/77.098419,43.219823',
   contactUrl: 'https://t.me/rubyminer',
   schedule: [
     { time: '16:00', label: { ru: 'Сбор гостей и игра', en: 'Guests arrive · the game', kk: 'Қонақтарды қарсы алу · ойын' } as L },

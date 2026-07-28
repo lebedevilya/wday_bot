@@ -55,7 +55,8 @@ Mark `[x]` as completed. If we stop, resume from first unchecked item.
 - [x] Local end-to-end test with real bot (join → task → photo → Gemini approve → wall)
 - [x] Vercel deploy (https://wday-tau.vercel.app) + env vars + webhook set
 - [x] Light white-pink redesign (Comfortaa + Onest, dusty-rose accent)
-- [ ] Seed real guest list + reference photos via /admin
+- [x] Real venue: Tau Resort, ул. Жамбыла Жабаева 21, с. Бескайнар, Талгарский р-н (2GIS link in lib/event.ts)
+- [ ] Seed real guest list + reference photos via /admin (mark non-players who should appear in photo tasks as **target**)
 - [ ] Attach custom domain **wday.ilyalebe.dev** (Vercel project → Domains → add wday.ilyalebe.dev, add CNAME `wday` → cname.vercel-dns.com in ilyalebe.dev DNS; update NEXT_PUBLIC_SITE_URL + re-run `npm run webhook`)
 - [ ] Dry run with test account end-to-end (both Telegram and /play)
 - [ ] Print ONE QR pointing at /play (it links onward to the bot for Telegram users)
