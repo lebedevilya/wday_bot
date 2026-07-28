@@ -5,34 +5,16 @@ import {
   isAdmin, login, saveGuest, deleteGuest, resetGuestBinding,
   saveTemplate, deleteTemplate, approveSubmission, rejectSubmission, hidePhoto, saveSettings,
 } from './actions';
+import { Flash, GROUPS, STATUSES, btn, btnGhost, input } from './ui';
 
 export const dynamic = 'force-dynamic';
 
-const GROUPS = ['kids', 'aigul_family', 'aigul_friends', 'ilya_family', 'ilya_friends'];
-const STATUSES = ['inactive', 'target', 'playing'];
 
-const input = 'rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink';
-const btn = 'cursor-pointer rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-accent-ink transition hover:opacity-90 active:scale-[0.98]';
-const btnGhost = 'cursor-pointer rounded-lg border border-line px-3 py-2 text-sm text-ink-muted transition hover:border-accent hover:text-ink active:scale-[0.98]';
-
-// what each action reports back through ?msg=
-const MESSAGES: Record<string, { text: string; ok: boolean }> = {
-  welcome: { text: 'Signed in.', ok: true },
-  saved: { text: 'Saved.', ok: true },
-  created: { text: 'Created.', ok: true },
-  saved_with_photo: { text: 'Saved, reference photo uploaded.', ok: true },
-  deleted: { text: 'Deleted.', ok: true },
-  unbound: { text: 'Unbound — that name can be claimed again.', ok: true },
-  approved: { text: 'Approved, points awarded.', ok: true },
-  rejected: { text: 'Rejected, points revoked.', ok: true },
-  hidden: { text: 'Photo hidden from the wall.', ok: true },
-  name_required: { text: 'Name is required — nothing was saved.', ok: false },
-  bad_json: { text: 'That is not valid JSON — settings unchanged.', ok: false },
-  photo_failed: { text: 'Saved, but the photo upload failed.', ok: false },
-  error: { text: 'The database rejected that. Nothing changed.', ok: false },
-};
-
-export default async function Admin({ searchParams }: { searchParams: Promise<{ tab?: string; msg?: string }> }) {
+export default async function Admin({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string; msg?: string; q?: string; grp?: string; st?: string }>;
+}) {
   if (!(await isAdmin())) {
     return (
       <main className="mx-auto max-w-sm px-4 py-24">
@@ -45,20 +27,10 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
     );
   }
 
-  const { tab = 'guests', msg } = await searchParams;
-  const flash = msg ? MESSAGES[msg] : undefined;
+  const { tab = 'guests', msg, q = '', grp = '', st = '' } = await searchParams;
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8">
-      {flash && (
-        <div
-          role="status"
-          aria-live="polite"
-          className={`mb-6 flex items-center justify-between gap-4 rounded-xl px-4 py-3 text-sm font-semibold ${flash.ok ? 'bg-ok/15 text-ok' : 'bg-danger/15 text-danger'}`}
-        >
-          <span>{flash.ok ? '✓' : '✕'} {flash.text}</span>
-          <Link href={`/admin?tab=${tab}`} aria-label="Dismiss" className="cursor-pointer px-1 text-ink-muted hover:text-ink">✕</Link>
-        </div>
-      )}
+      <Flash msg={msg} dismissHref={`/admin?tab=${tab}`} />
       <nav className="mb-8 flex flex-wrap gap-2">
         {['guests', 'tasks', 'review', 'settings'].map((t) => (
           <Link
@@ -71,7 +43,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
         ))}
         <Link href="/" className="ml-auto self-center text-sm text-ink-muted underline">→ wall</Link>
       </nav>
-      {tab === 'guests' && <Guests />}
+      {tab === 'guests' && <Guests q={q} grp={grp} st={st} />}
       {tab === 'tasks' && <Tasks />}
       {tab === 'review' && <Review />}
       {tab === 'settings' && <SettingsTab />}
@@ -79,11 +51,15 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
   );
 }
 
-function GuestFields({ g }: { g?: Guest }) {
+// In list rows the name is a link to the guest page, so the text input is replaced by a
+// hidden field (saveGuest still requires a name). The new-guest form keeps the input.
+function GuestFields({ g, hideName }: { g?: Guest; hideName?: boolean }) {
   return (
     <>
       <input type="hidden" name="id" value={g?.id ?? ''} />
-      <input name="name" defaultValue={g?.name} placeholder="Name" required className={`${input} w-44`} />
+      {hideName
+        ? <input type="hidden" name="name" value={g?.name ?? ''} />
+        : <input name="name" defaultValue={g?.name} placeholder="Name" required className={`${input} w-44`} />}
       <select name="grp" defaultValue={g?.grp ?? 'ilya_friends'} className={input}>
         {GROUPS.map((x) => <option key={x}>{x}</option>)}
       </select>
@@ -97,22 +73,58 @@ function GuestFields({ g }: { g?: Guest }) {
   );
 }
 
-async function Guests() {
-  const { data: guests } = await db.from('guests').select('*').order('name');
-  const yes = guests?.filter((g) => g.rsvp_status === 'yes') ?? [];
-  const no = guests?.filter((g) => g.rsvp_status === 'no') ?? [];
+async function Guests({ q, grp, st }: { q: string; grp: string; st: string }) {
+  // Filtering runs in the query, so it keeps working once the list is 50 guests long.
+  // Plain GET form + searchParams: no client JS, and the filtered view is linkable.
+  let query = db.from('guests').select('*').order('name');
+  if (q.trim()) query = query.ilike('name', `%${q.trim()}%`);
+  if (grp) query = query.eq('grp', grp);
+  if (st) query = query.eq('status', st);
+  const [{ data: guests }, { count: total }] = await Promise.all([
+    query,
+    db.from('guests').select('*', { count: 'exact', head: true }),
+  ]);
+
+  // RSVP tally is about the whole party, not the current filter
+  const { data: all } = await db.from('guests').select('rsvp_status, rsvp_party');
+  const yes = all?.filter((g) => g.rsvp_status === 'yes') ?? [];
+  const no = all?.filter((g) => g.rsvp_status === 'no') ?? [];
   const partySum = yes.reduce((n, g) => n + (g.rsvp_party ?? 1), 0);
+  const filtered = Boolean(q || grp || st);
+
   return (
     <section className="flex flex-col gap-3">
       <p className="text-sm">
-        RSVP: <b className="text-ok">{yes.length} yes</b> ({partySum} people) · <b className="text-danger">{no.length} no</b> · {(guests?.length ?? 0) - yes.length - no.length} pending
+        RSVP: <b className="text-ok">{yes.length} yes</b> ({partySum} people) · <b className="text-danger">{no.length} no</b> · {(all?.length ?? 0) - yes.length - no.length} pending
       </p>
       <p className="text-xs text-ink-muted">
         status: <b>inactive</b> — can join via QR · <b>target</b> — appears in photo tasks, hidden from join list · <b>playing</b> — active player
       </p>
+
+      <form method="get" action="/admin" className="flex flex-wrap items-center gap-2 rounded-xl bg-surface-2 p-3">
+        <input type="hidden" name="tab" value="guests" />
+        <input name="q" defaultValue={q} placeholder="Search name…" aria-label="Search by name" className={`${input} w-48`} />
+        <select name="grp" defaultValue={grp} aria-label="Filter by group" className={input}>
+          <option value="">all groups</option>
+          {GROUPS.map((x) => <option key={x} value={x}>{x}</option>)}
+        </select>
+        <select name="st" defaultValue={st} aria-label="Filter by status" className={input}>
+          <option value="">all statuses</option>
+          {STATUSES.map((x) => <option key={x} value={x}>{x}</option>)}
+        </select>
+        <button className={btn}>Filter</button>
+        {filtered && <Link href="/admin?tab=guests" className={btnGhost}>clear</Link>}
+        <span className="ml-auto text-xs text-ink-muted">
+          {filtered ? `${guests?.length ?? 0} of ${total ?? 0}` : `${total ?? 0} guests`}
+        </span>
+      </form>
+
       <form action={saveGuest} className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-line p-3">
         <GuestFields />
       </form>
+
+      {guests?.length === 0 && <p className="py-6 text-center text-sm text-ink-muted">No guests match that filter.</p>}
+
       {(guests as Guest[] | null)?.map((g) => (
         // key includes the mutable fields: these inputs are uncontrolled, so defaultValue
         // only applies on mount — without this the row keeps showing pre-save values
@@ -120,12 +132,20 @@ async function Guests() {
           key={`${g.id}:${g.name}:${g.grp}:${g.status}:${g.phone ?? ''}:${g.telegram_user_id ?? ''}:${g.web_token ?? ''}:${g.photo_url ?? ''}`}
           className="flex flex-wrap items-center gap-2 rounded-xl bg-surface p-3"
         >
-          {g.photo_url
-            // eslint-disable-next-line @next/next/no-img-element
-            ? <img src={g.photo_url} alt="" className="h-10 w-10 rounded-full object-cover" />
-            : <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2 text-xs">—</span>}
+          <Link href={`/admin/guest/${g.id}`} title="Open guest page">
+            {g.photo_url
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={g.photo_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+              : <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2 text-xs">—</span>}
+          </Link>
+          <Link
+            href={`/admin/guest/${g.id}`}
+            className="w-40 shrink-0 truncate font-semibold text-accent underline decoration-transparent transition hover:decoration-inherit"
+          >
+            {g.name}
+          </Link>
           <form action={saveGuest} className="flex flex-wrap items-center gap-2">
-            <GuestFields g={g} />
+            <GuestFields g={g} hideName />
           </form>
           <span className="text-xs text-ink-muted">
             {g.rsvp_status === 'yes' ? `✅×${g.rsvp_party}` : g.rsvp_status === 'no' ? '🚫' : ''}

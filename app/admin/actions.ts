@@ -26,6 +26,15 @@ function done(tab: string, msg: string): never {
   redirect(`/admin?tab=${tab}&msg=${msg}`);
 }
 
+// Same, but honours a `back` field so an action fired from a guest detail page
+// returns there instead of bouncing to the tab it "belongs" to.
+function doneBack(formData: FormData, tab: string, msg: string): never {
+  const back = String(formData.get('back') ?? '');
+  if (!back.startsWith('/admin/')) done(tab, msg); // only ever redirect inside admin
+  revalidatePath(back);
+  redirect(`${back}?msg=${msg}`);
+}
+
 // Supabase returns errors instead of throwing; without this a failed write looked
 // exactly like a successful one.
 function check(...results: { error: { message: string } | null }[]): string | null {
@@ -82,7 +91,7 @@ export async function saveGuest(formData: FormData) {
     }
     done('guests', 'saved_with_photo');
   }
-  done('guests', id ? 'saved' : 'created');
+  doneBack(formData, 'guests', id ? 'saved' : 'created');
 }
 
 export async function deleteGuest(formData: FormData) {
@@ -100,7 +109,7 @@ export async function resetGuestBinding(formData: FormData) {
   const err = check(
     await db.from('guests').update({ telegram_user_id: null, web_token: null, status: 'inactive' }).eq('id', id),
   );
-  done('guests', err ? 'error' : 'unbound');
+  doneBack(formData, 'guests', err ? 'error' : 'unbound');
 }
 
 export async function saveTemplate(formData: FormData) {
@@ -139,7 +148,7 @@ export async function approveSubmission(formData: FormData) {
     await awardPoints(id, (a.task_templates as { points: number }).points);
     if (a.photo_url) await db.from('photos').insert({ url: a.photo_url, guest_id: a.guest_id, source: 'task' });
   }
-  done('review', 'approved');
+  doneBack(formData, 'review', 'approved');
 }
 
 export async function rejectSubmission(formData: FormData) {
@@ -153,13 +162,13 @@ export async function rejectSubmission(formData: FormData) {
     if (a.photo_url) await db.from('photos').update({ visible: false }).eq('url', a.photo_url);
   }
   const err = check(await db.from('assignments').update({ status: 'rejected', points_awarded: 0 }).eq('id', id));
-  done('review', err ? 'error' : 'rejected');
+  doneBack(formData, 'review', err ? 'error' : 'rejected');
 }
 
 export async function hidePhoto(formData: FormData) {
   await guard();
   const err = check(await db.from('photos').update({ visible: false }).eq('id', String(formData.get('id'))));
-  done('review', err ? 'error' : 'hidden');
+  doneBack(formData, 'review', err ? 'error' : 'hidden');
 }
 
 export async function saveSettings(formData: FormData) {
@@ -172,4 +181,15 @@ export async function saveSettings(formData: FormData) {
   }
   const err = check(await db.from('settings').update({ data }).eq('id', 1));
   done('settings', err ? 'error' : 'saved');
+}
+
+// Clear a guest's game progress: drop their tasks and zero their points. Used when a
+// row carries leftover state (e.g. a test guest renamed into a real one).
+export async function resetGuestProgress(formData: FormData) {
+  await guard();
+  const id = String(formData.get('id'));
+  await db.from('assignments').delete().eq('guest_id', id);
+  await db.from('photos').update({ visible: false }).eq('guest_id', id);
+  const err = check(await db.from('guests').update({ points: 0 }).eq('id', id));
+  doneBack(formData, 'guests', err ? 'error' : 'points_reset');
 }
