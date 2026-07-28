@@ -12,10 +12,27 @@ const GROUPS = ['kids', 'aigul_family', 'aigul_friends', 'ilya_family', 'ilya_fr
 const STATUSES = ['inactive', 'target', 'playing'];
 
 const input = 'rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink';
-const btn = 'rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-accent-ink';
-const btnGhost = 'rounded-lg border border-line px-3 py-2 text-sm text-ink-muted';
+const btn = 'cursor-pointer rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-accent-ink transition hover:opacity-90 active:scale-[0.98]';
+const btnGhost = 'cursor-pointer rounded-lg border border-line px-3 py-2 text-sm text-ink-muted transition hover:border-accent hover:text-ink active:scale-[0.98]';
 
-export default async function Admin({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+// what each action reports back through ?msg=
+const MESSAGES: Record<string, { text: string; ok: boolean }> = {
+  welcome: { text: 'Signed in.', ok: true },
+  saved: { text: 'Saved.', ok: true },
+  created: { text: 'Created.', ok: true },
+  saved_with_photo: { text: 'Saved, reference photo uploaded.', ok: true },
+  deleted: { text: 'Deleted.', ok: true },
+  unbound: { text: 'Unbound — that name can be claimed again.', ok: true },
+  approved: { text: 'Approved, points awarded.', ok: true },
+  rejected: { text: 'Rejected, points revoked.', ok: true },
+  hidden: { text: 'Photo hidden from the wall.', ok: true },
+  name_required: { text: 'Name is required — nothing was saved.', ok: false },
+  bad_json: { text: 'That is not valid JSON — settings unchanged.', ok: false },
+  photo_failed: { text: 'Saved, but the photo upload failed.', ok: false },
+  error: { text: 'The database rejected that. Nothing changed.', ok: false },
+};
+
+export default async function Admin({ searchParams }: { searchParams: Promise<{ tab?: string; msg?: string }> }) {
   if (!(await isAdmin())) {
     return (
       <main className="mx-auto max-w-sm px-4 py-24">
@@ -28,15 +45,26 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
     );
   }
 
-  const { tab = 'guests' } = await searchParams;
+  const { tab = 'guests', msg } = await searchParams;
+  const flash = msg ? MESSAGES[msg] : undefined;
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8">
+      {flash && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`mb-6 flex items-center justify-between gap-4 rounded-xl px-4 py-3 text-sm font-semibold ${flash.ok ? 'bg-ok/15 text-ok' : 'bg-danger/15 text-danger'}`}
+        >
+          <span>{flash.ok ? '✓' : '✕'} {flash.text}</span>
+          <Link href={`/admin?tab=${tab}`} aria-label="Dismiss" className="cursor-pointer px-1 text-ink-muted hover:text-ink">✕</Link>
+        </div>
+      )}
       <nav className="mb-8 flex flex-wrap gap-2">
         {['guests', 'tasks', 'review', 'settings'].map((t) => (
           <Link
             key={t}
             href={`/admin?tab=${t}`}
-            className={`rounded-full px-4 py-2 text-sm font-semibold ${tab === t ? 'bg-accent text-accent-ink' : 'border border-line text-ink-muted'}`}
+            className={`cursor-pointer rounded-full px-4 py-2 text-sm font-semibold transition ${tab === t ? 'bg-accent text-accent-ink' : 'border border-line text-ink-muted hover:text-ink'}`}
           >
             {t}
           </Link>
@@ -86,7 +114,12 @@ async function Guests() {
         <GuestFields />
       </form>
       {(guests as Guest[] | null)?.map((g) => (
-        <div key={g.id} className="flex flex-wrap items-center gap-2 rounded-xl bg-surface p-3">
+        // key includes the mutable fields: these inputs are uncontrolled, so defaultValue
+        // only applies on mount — without this the row keeps showing pre-save values
+        <div
+          key={`${g.id}:${g.name}:${g.grp}:${g.status}:${g.phone ?? ''}:${g.telegram_user_id ?? ''}:${g.web_token ?? ''}:${g.photo_url ?? ''}`}
+          className="flex flex-wrap items-center gap-2 rounded-xl bg-surface p-3"
+        >
           {g.photo_url
             // eslint-disable-next-line @next/next/no-img-element
             ? <img src={g.photo_url} alt="" className="h-10 w-10 rounded-full object-cover" />
@@ -97,11 +130,14 @@ async function Guests() {
           <span className="text-xs text-ink-muted">
             {g.rsvp_status === 'yes' ? `✅×${g.rsvp_party}` : g.rsvp_status === 'no' ? '🚫' : ''}
             {g.telegram_user_id ? ' tg✓' : ''}
+            {g.web_token ? ' web✓' : ''}
+            {g.points > 0 ? ` ${g.points}pt` : ''}
           </span>
-          {g.telegram_user_id && (
+          {/* web players have web_token and no telegram id, so check both or they can never be unbound */}
+          {(g.telegram_user_id || g.web_token) && (
             <form action={resetGuestBinding}>
               <input type="hidden" name="id" value={g.id} />
-              <button className={btnGhost} title="Unbind Telegram (wrong name claimed)">unbind</button>
+              <button className={btnGhost} title="Release this name (wrong name claimed)">unbind</button>
             </form>
           )}
           <form action={deleteGuest}>
@@ -145,7 +181,10 @@ async function Tasks() {
   return (
     <section className="flex flex-col gap-3">
       <TemplateForm />
-      {(templates as TaskTemplate[] | null)?.map((tt) => <TemplateForm key={tt.id} tt={tt} />)}
+      {(templates as TaskTemplate[] | null)?.map((tt) => (
+        // same uncontrolled-input remount rule as the guest rows above
+        <TemplateForm key={`${tt.id}:${tt.kind}:${tt.points}:${tt.active}:${tt.target_guest_id ?? ''}:${JSON.stringify(tt.title)}`} tt={tt} />
+      ))}
     </section>
   );
 }

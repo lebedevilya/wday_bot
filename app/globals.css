@@ -35,6 +35,13 @@ body {
   font-family: var(--font-onest), system-ui, sans-serif;
 }
 
+/* Tailwind's reset drops the UA `cursor: pointer` on buttons, which made every
+   action button feel inert on hover. Restore it once instead of per-component. */
+button:not(:disabled), [role="button"]:not([aria-disabled="true"]), label:has(> input[type="file"]), summary {
+  cursor: pointer;
+}
+button:disabled { cursor: not-allowed; }
+
 h1, h2, h3 {
   font-family: var(--font-literata), serif;
   text-wrap: balance;
