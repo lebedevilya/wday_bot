@@ -23,6 +23,7 @@ create table guests (
   rsvp_party int not null default 1, -- adults + kids, the headcount
   rsvp_kids int not null default 0,
   rsvp_arrival text,
+  rsvp_transfer boolean not null default false, -- needs a seat on a transfer from the city
   created_at timestamptz not null default now()
 );
 

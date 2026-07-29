@@ -101,8 +101,14 @@ async function photo(form: FormData, id: string) {
   return NextResponse.json({ ok: !error });
 }
 
+// Transfer travels with this call, including when the arrival time is skipped — knowing
+// who needs a seat matters more than knowing when they turn up.
 async function arrival(form: FormData, id: string) {
   const at = clean(form.get('arrival'), 40);
-  const { error } = await db.from('guests').update({ rsvp_arrival: at || null }).eq('id', id);
+  const transfer = String(form.get('transfer') ?? '') === '1';
+  const { error } = await db
+    .from('guests')
+    .update({ rsvp_arrival: at || null, rsvp_transfer: transfer })
+    .eq('id', id);
   return NextResponse.json({ ok: !error });
 }

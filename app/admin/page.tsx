@@ -89,17 +89,20 @@ async function Guests({ q, grp, st }: { q: string; grp: string; st: string }) {
   ]);
 
   // RSVP tally is about the whole party, not the current filter
-  const { data: all } = await db.from('guests').select('rsvp_status, rsvp_party, rsvp_kids');
+  const { data: all } = await db.from('guests').select('rsvp_status, rsvp_party, rsvp_kids, rsvp_transfer');
   const yes = all?.filter((g) => g.rsvp_status === 'yes') ?? [];
   const no = all?.filter((g) => g.rsvp_status === 'no') ?? [];
   const partySum = yes.reduce((n, g) => n + (g.rsvp_party ?? 1), 0);
   const kidsSum = yes.reduce((n, g) => n + (g.rsvp_kids ?? 0), 0);
+  // seats to arrange on the transfer, not just how many parties asked for it
+  const transferSeats = yes.filter((g) => g.rsvp_transfer).reduce((n, g) => n + (g.rsvp_party ?? 1), 0);
   const filtered = Boolean(q || grp || st);
 
   return (
     <section className="flex flex-col gap-3">
       <p className="text-sm">
         RSVP: <b className="text-ok">{yes.length} yes</b> ({partySum} people{kidsSum ? `, ${kidsSum} kids` : ''}) · <b className="text-danger">{no.length} no</b> · {(all?.length ?? 0) - yes.length - no.length} pending
+        {transferSeats > 0 && <> · 🚌 <b>{transferSeats}</b> need a transfer</>}
       </p>
       <p className="text-xs text-ink-muted">
         status: <b>inactive</b> — can join via QR · <b>target</b> — appears in photo tasks, hidden from join list · <b>playing</b> — active player
@@ -155,6 +158,7 @@ async function Guests({ q, grp, st }: { q: string; grp: string; st: string }) {
             {g.rsvp_status === 'yes' ? `✅×${g.rsvp_party}` : g.rsvp_status === 'no' ? '🚫' : ''}
             {g.rsvp_kids ? ` 👶${g.rsvp_kids}` : ''}
             {g.rsvp_arrival ? ` 🕑${g.rsvp_arrival}` : ''}
+            {g.rsvp_transfer ? ' 🚌' : ''}
             {g.telegram_user_id ? ' tg✓' : ''}
             {g.web_token ? ' web✓' : ''}
             {g.points > 0 ? ` ${g.points}pt` : ''}

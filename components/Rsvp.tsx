@@ -11,7 +11,7 @@ const ui = EVENT.ui;
 // so dropping out at the photo or arrival screen still leaves a complete answer.
 type Step = 'name' | 'who' | 'photo' | 'arrival' | 'done' | 'declined';
 
-const ARRIVALS = ['17:00', '17:30', '18:00', '18:30'];
+const ARRIVALS = ['17:00', '18:00'];
 
 export default function Rsvp({ locale }: { locale: Locale }) {
   const t = (d: Record<Locale, string>) => d[locale];
@@ -25,6 +25,7 @@ export default function Rsvp({ locale }: { locale: Locale }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmNo, setConfirmNo] = useState(false);
+  const [transfer, setTransfer] = useState(false);
 
   const post = async (form: FormData) => {
     setBusy(true);
@@ -67,16 +68,17 @@ export default function Rsvp({ locale }: { locale: Locale }) {
     }
   }
 
+  // Always sent, even when the time is skipped: the transfer answer rides along and is
+  // the part we actually need for logistics.
   async function submitArrival(at: string) {
-    if (at) {
-      const f = new FormData();
-      f.set('action', 'arrival');
-      f.set('arrival', at);
-      try {
-        await post(f);
-      } catch {
-        // arrival time is optional — never block the thank-you screen on it
-      }
+    const f = new FormData();
+    f.set('action', 'arrival');
+    f.set('arrival', at);
+    f.set('transfer', transfer ? '1' : '0');
+    try {
+      await post(f);
+    } catch {
+      // optional details — never block the thank-you screen on them
     }
     setStep('done');
   }
@@ -201,12 +203,25 @@ export default function Rsvp({ locale }: { locale: Locale }) {
             <p className="text-lg">{t(ui.rsvpArrivalTitle)}</p>
             <p className="mt-1 text-sm text-ink-muted">{t(ui.rsvpArrivalHint)}</p>
           </div>
+          <label className={`${card} flex cursor-pointer items-start gap-3 px-4 py-3 text-left`}>
+            <input
+              type="checkbox"
+              checked={transfer}
+              onChange={(e) => setTransfer(e.target.checked)}
+              className="mt-1 h-5 w-5 cursor-pointer accent-accent"
+            />
+            <span>
+              <span className="block font-semibold">{t(ui.rsvpTransfer)}</span>
+              <span className="block text-xs text-ink-muted">{t(ui.rsvpTransferHint)}</span>
+            </span>
+          </label>
+
           <div className="flex flex-wrap gap-2">
             {ARRIVALS.map((a) => (
               <button key={a} onClick={() => submitArrival(a)} disabled={busy} className={ghost}>{a}</button>
             ))}
-            <button onClick={() => submitArrival(t(ui.rsvpArrivalLater))} disabled={busy} className={ghost}>
-              {t(ui.rsvpArrivalLater)}
+            <button onClick={() => submitArrival('19:00')} disabled={busy} className={ghost}>
+              19:00 · {t(ui.rsvpCeremonyNote)}
             </button>
           </div>
           <button onClick={() => submitArrival('')} className="cursor-pointer text-sm text-ink-muted underline">

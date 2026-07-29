@@ -52,7 +52,8 @@ Mark `[x]` as completed. If we stop, resume from first unchecked item.
 - [x] RSVP: guests type their own name instead of picking from a list (creates the guest row)
 - [x] Alone / with-a-pair (pair becomes one row "Медет + Акмарал") + optional kids count
 - [x] Guest uploads their own photo with a square crop tool — this IS the AI reference photo
-- [x] Optional approximate arrival time
+- [x] Optional approximate arrival time (17:00 / 18:00 / 19:00 к церемонии)
+- [x] "Нужен трансфер" checkbox — admin shows total **seats** needed, not just parties
 - [x] "Add to Google Calendar" + "Subscribe to the bot" on the thank-you screen
 - [x] Game hidden until the day: `game_public` flag gates /play, /wall, both game APIs and the bot
 - [ ] **On 8 August: set `game_public` to true** in admin → Settings (one JSON edit) to open the game

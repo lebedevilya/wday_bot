@@ -60,7 +60,17 @@ export const EVENT = {
     // arrival
     rsvpArrivalTitle: { ru: 'Во сколько вас ждать?', en: 'When should we expect you?', kk: 'Сізді қашан күтейік?' } as L,
     rsvpArrivalHint: { ru: 'Примерно — просто чтобы мы вас не потеряли', en: 'Roughly — just so we don’t lose you', kk: 'Шамамен — сізді жоғалтпау үшін' } as L,
-    rsvpArrivalLater: { ru: 'Ближе к церемонии', en: 'Closer to the ceremony', kk: 'Рәсімге жақын' } as L,
+    rsvpCeremonyNote: { ru: 'к церемонии', en: 'for the ceremony', kk: 'рәсімге' } as L,
+    rsvpTransfer: {
+      ru: 'У меня нет машины — нужен трансфер',
+      en: 'I don’t have a car — I need a transfer',
+      kk: 'Менде көлік жоқ — трансфер керек',
+    } as L,
+    rsvpTransferHint: {
+      ru: 'Мы организуем трансфер из города, поэтому нам важно знать заранее',
+      en: 'We are arranging a transfer from the city, so it helps to know in advance',
+      kk: 'Қаладан трансфер ұйымдастырамыз, сондықтан алдын ала білгеніміз жақсы',
+    } as L,
     // done
     rsvpCalendar: { ru: 'Добавить в Google Календарь', en: 'Add to Google Calendar', kk: 'Google Күнтізбесіне қосу' } as L,
     rsvpBot: { ru: 'Подписаться на бота', en: 'Subscribe to the bot', kk: 'Ботқа жазылу' } as L,

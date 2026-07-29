@@ -18,6 +18,7 @@ export interface Guest {
   rsvp_party: number;
   rsvp_kids: number;
   rsvp_arrival: string | null;
+  rsvp_transfer: boolean;
 }
 
 export interface TaskTemplate {
