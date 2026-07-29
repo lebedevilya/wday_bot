@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { gameVisible } from '@/lib/gate';
 
 export const dynamic = 'force-dynamic';
 
 // Public read model for the wall page (polled every ~10s by the client).
 export async function GET() {
   try {
+    if (!(await gameVisible())) return NextResponse.json({ photos: [], wishes: [], leaderboard: [] }, { status: 403 });
     return await wall();
   } catch {
     return NextResponse.json({ photos: [], wishes: [], leaderboard: [] });

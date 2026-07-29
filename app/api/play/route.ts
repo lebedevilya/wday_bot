@@ -5,6 +5,7 @@ import { db, getSettings } from '@/lib/db';
 import { ensureAssignments, getTaskList, awardPoints, prizeFor, targetLabel } from '@/lib/game';
 import { storeUploadedPhoto, fetchImage } from '@/lib/images';
 import { verifyPhoto } from '@/lib/verify';
+import { gameVisible } from '@/lib/gate';
 import type { Guest, Locale, TaskTemplate } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -44,6 +45,7 @@ async function state(me: Guest | null) {
 
 export async function GET() {
   try {
+    if (!(await gameVisible())) return NextResponse.json({ error: 'closed' }, { status: 403 });
     return NextResponse.json(await state(await currentPlayer()), { headers: { 'Cache-Control': 'no-store' } });
   } catch {
     return NextResponse.json({ me: null, names: [] }, { status: 500 });
@@ -52,6 +54,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    if (!(await gameVisible())) return NextResponse.json({ error: 'closed' }, { status: 403 });
     const form = await req.formData();
     const action = String(form.get('action') ?? '');
     if (action === 'join') return await join(form);

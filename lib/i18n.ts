@@ -97,6 +97,11 @@ const dict: Dict = {
   next_page: { ru: 'Дальше ▶️', en: 'Next ▶️', kk: 'Келесі ▶️' },
   prev_page: { ru: '◀️ Назад', en: '◀️ Back', kk: '◀️ Артқа' },
 
+  game_soon: {
+    ru: 'Привет! 💛 Рады, что ты с нами.\n\nСвадьба Ильи и Айгуль — 8 августа, Tau Resort, сбор с 17:00.\nВ день праздника здесь начнется кое-что интересное — я напишу тебе сам. До встречи!',
+    en: 'Hi! 💛 So glad you are with us.\n\nIlya & Aigul’s wedding is on 8 August at Tau Resort, guests arrive from 17:00.\nSomething fun starts here on the day — I will message you. See you soon!',
+    kk: 'Сәлем! 💛 Бізбен бірге болғаныңа қуаныштымыз.\n\nИлья мен Айгүлдің тойы — 8 тамыз, Tau Resort, қонақтар 17:00-ден жиналады.\nТой күні осында қызық басталады — өзім жазамын. Көріскенше!',
+  },
   // --- web version of the game (/play) ---
   play_title: { ru: 'Игра', en: 'The game', kk: 'Ойын' },
   play_intro: {

@@ -9,7 +9,10 @@ create table guests (
   relation text,
   photo_url text,
   phone text,
-  grp text not null check (grp in ('kids','aigul_family','aigul_friends','ilya_family','ilya_friends')),
+  -- 'unknown' is the default because the public RSVP form creates guests before
+  -- anyone has decided which side they belong to
+  grp text not null default 'unknown'
+    check (grp in ('kids','aigul_family','aigul_friends','ilya_family','ilya_friends','unknown')),
   status text not null default 'inactive' check (status in ('inactive','target','playing')),
   telegram_user_id bigint unique,
   -- browser players (no Telegram): cookie token bound to this guest
@@ -17,9 +20,13 @@ create table guests (
   points int not null default 0,
   locale text not null default 'ru' check (locale in ('ru','en','kk')),
   rsvp_status text not null default 'pending' check (rsvp_status in ('pending','yes','no')),
-  rsvp_party int not null default 1,
+  rsvp_party int not null default 1, -- adults + kids, the headcount
+  rsvp_kids int not null default 0,
+  rsvp_arrival text,
   created_at timestamptz not null default now()
 );
+
+create unique index guests_name_lower_idx on guests (lower(name));
 
 create table task_templates (
   id uuid primary key default gen_random_uuid(),

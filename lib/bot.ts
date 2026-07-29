@@ -1,5 +1,6 @@
 import { Bot, Context, InlineKeyboard } from 'grammy';
 import { db } from './db';
+import { gameOpen } from './gate';
 import { t } from './i18n';
 import { ensureAssignments, getTaskList, awardPoints, prizeFor, targetLabel } from './game';
 import { getSettings } from './db';
@@ -87,6 +88,23 @@ async function finishJoin(ctx: Context, guest: Guest) {
   await ctx.reply(t(guest.locale, 'help'));
   await showTasks(ctx);
 }
+
+// The game is a surprise until the wedding day: until `game_public` flips, the bot
+// greets people (so they can subscribe early) and reveals nothing else.
+bot.use(async (ctx, next) => {
+  if (await gameOpen()) return next();
+  if (ctx.callbackQuery) await ctx.answerCallbackQuery().catch(() => {});
+  const locale = await loc(ctx);
+  if (ctx.callbackQuery?.data?.startsWith('loc:')) {
+    const picked = ctx.callbackQuery.data.slice(4) as Locale;
+    await setState(ctx.from!.id, { ...(await getState(ctx.from!.id)), locale: picked });
+    return ctx.reply(t(picked, 'game_soon'));
+  }
+  if (ctx.message?.text?.startsWith('/lang')) {
+    return ctx.reply(t(locale, 'pick_locale'), { reply_markup: localeKeyboard() });
+  }
+  await ctx.reply(t(locale, 'game_soon'));
+});
 
 // --- commands ---
 

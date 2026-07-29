@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-export const GROUPS = ['kids', 'aigul_family', 'aigul_friends', 'ilya_family', 'ilya_friends'];
+export const GROUPS = ['unknown', 'kids', 'aigul_family', 'aigul_friends', 'ilya_family', 'ilya_friends'];
 export const STATUSES = ['inactive', 'target', 'playing'];
 
 export const input = 'rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink';

@@ -1,5 +1,5 @@
 export type Locale = 'ru' | 'en' | 'kk';
-export type GuestGroup = 'kids' | 'aigul_family' | 'aigul_friends' | 'ilya_family' | 'ilya_friends';
+export type GuestGroup = 'kids' | 'aigul_family' | 'aigul_friends' | 'ilya_family' | 'ilya_friends' | 'unknown';
 export type GuestStatus = 'inactive' | 'target' | 'playing';
 
 export interface Guest {
@@ -16,6 +16,8 @@ export interface Guest {
   locale: Locale;
   rsvp_status: 'pending' | 'yes' | 'no';
   rsvp_party: number;
+  rsvp_kids: number;
+  rsvp_arrival: string | null;
 }
 
 export interface TaskTemplate {
@@ -47,6 +49,8 @@ export interface Settings {
   core_tasks_per_player: number;
   person_tasks_per_player: number;
   prize_tiers: PrizeTier[];
+  // false until the wedding day: keeps the game unspoiled on the site and in the bot
+  game_public?: boolean;
 }
 
 // bot_state.state shape

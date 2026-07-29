@@ -67,7 +67,9 @@ export default async function GuestPage({
             {g.phone ? ` · ${g.phone}` : ''}
           </p>
           <p className="text-sm text-ink-muted">
-            RSVP: {g.rsvp_status === 'yes' ? `coming, ${g.rsvp_party} people` : g.rsvp_status === 'no' ? 'declined' : 'no answer yet'}
+            RSVP: {g.rsvp_status === 'yes'
+              ? `coming, ${g.rsvp_party} people${g.rsvp_kids ? ` (${g.rsvp_kids} kids)` : ''}${g.rsvp_arrival ? ` · arriving ${g.rsvp_arrival}` : ''}`
+              : g.rsvp_status === 'no' ? 'declined' : 'no answer yet'}
           </p>
         </div>
       </header>
