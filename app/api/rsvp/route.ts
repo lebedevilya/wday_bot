@@ -53,25 +53,35 @@ async function answer(form: FormData, action: 'attend' | 'decline') {
     rsvp_kids: kids,
   };
 
-  // Match an existing guest by typed name so pre-seeded people aren't duplicated.
-  const { data: existing } = await db.from('guests').select('id').ilike('name', name).maybeSingle();
-  let id = existing?.id as string | undefined;
+  const jar = await cookies();
+  let id = jar.get(COOKIE)?.value;
+
   if (id) {
+    // Returning guest editing their own answer.
     const { error } = await db.from('guests').update(row).eq('id', id);
     if (error) return NextResponse.json({ error: 'save_failed' }, { status: 500 });
   } else {
-    const res = await db.from('guests').insert(row).select('id').single();
-    if (res.error) {
-      // lost a race on the lower(name) unique index — take the row that won
-      const { data: again } = await db.from('guests').select('id').ilike('name', name).maybeSingle();
-      if (!again) return NextResponse.json({ error: 'save_failed' }, { status: 500 });
-      id = again.id;
+    // Only reuse a row nobody has answered as yet — that covers guests we seeded by
+    // hand, without letting a second "Медет" overwrite the first one's RSVP.
+    const { data: free } = await db
+      .from('guests')
+      .select('id')
+      .ilike('name', name)
+      .eq('rsvp_status', 'pending')
+      .limit(1)
+      .maybeSingle();
+    if (free) {
+      const { error } = await db.from('guests').update(row).eq('id', free.id);
+      if (error) return NextResponse.json({ error: 'save_failed' }, { status: 500 });
+      id = free.id;
     } else {
+      const res = await db.from('guests').insert(row).select('id').single();
+      if (res.error) return NextResponse.json({ error: 'save_failed' }, { status: 500 });
       id = res.data.id;
     }
   }
 
-  (await cookies()).set(COOKIE, id!, {
+  jar.set(COOKIE, id!, {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',

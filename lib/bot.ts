@@ -94,15 +94,23 @@ async function finishJoin(ctx: Context, guest: Guest) {
 bot.use(async (ctx, next) => {
   if (await gameOpen()) return next();
   if (ctx.callbackQuery) await ctx.answerCallbackQuery().catch(() => {});
+  const tgId = ctx.from?.id;
+  if (!tgId) return;
+  const state = await getState(tgId);
   const locale = await loc(ctx);
+
   if (ctx.callbackQuery?.data?.startsWith('loc:')) {
     const picked = ctx.callbackQuery.data.slice(4) as Locale;
-    await setState(ctx.from!.id, { ...(await getState(ctx.from!.id)), locale: picked });
+    await setState(tgId, { ...state, locale: picked, greeted: true });
     return ctx.reply(t(picked, 'game_soon'));
   }
   if (ctx.message?.text?.startsWith('/lang')) {
     return ctx.reply(t(locale, 'pick_locale'), { reply_markup: localeKeyboard() });
   }
+  // The full welcome once; after that a short line, so tapping several commands
+  // doesn't produce a wall of identical paragraphs.
+  if (state.greeted) return ctx.reply(t(locale, 'game_soon_short'));
+  await setState(tgId, { ...state, greeted: true });
   await ctx.reply(t(locale, 'game_soon'));
 });
 

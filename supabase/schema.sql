@@ -27,7 +27,8 @@ create table guests (
   created_at timestamptz not null default now()
 );
 
-create unique index guests_name_lower_idx on guests (lower(name));
+-- not unique: two guests may share a first name (RSVP asks for first name only)
+create index guests_name_lower_idx on guests (lower(name));
 
 create table task_templates (
   id uuid primary key default gen_random_uuid(),

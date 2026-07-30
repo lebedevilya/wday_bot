@@ -104,7 +104,7 @@ export const EVENT = {
   ui: {
     rsvpTitle: { ru: 'Вы придете?', en: 'Will you join us?', kk: 'Келесіз бе?' } as L,
     rsvpAskName: { ru: 'Как вас зовут?', en: 'What is your name?', kk: 'Атыңыз кім?' } as L,
-    rsvpSearch: { ru: 'Имя и фамилия', en: 'Name and surname', kk: 'Аты-жөніңіз' } as L,
+    rsvpSearch: { ru: 'Ваше имя', en: 'Your first name', kk: 'Атыңыз' } as L,
     rsvpNext: { ru: 'Дальше', en: 'Next', kk: 'Әрі қарай' } as L,
     rsvpSkip: { ru: 'Пропустить', en: 'Skip', kk: 'Өткізіп жіберу' } as L,
     // who is coming

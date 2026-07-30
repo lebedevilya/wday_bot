@@ -102,6 +102,11 @@ const dict: Dict = {
     en: 'Hi! 💛 So glad you are with us.\n\nIlya & Aigul’s wedding is on 8 August at Tau Resort, guests arrive from 17:00.\nSomething fun starts here on the day — I will message you. See you soon!',
     kk: 'Сәлем! 💛 Бізбен бірге болғаныңа қуаныштымыз.\n\nИлья мен Айгүлдің тойы — 8 тамыз, Tau Resort, қонақтар 17:00-ден жиналады.\nТой күні осында қызық басталады — өзім жазамын. Көріскенше!',
   },
+  game_soon_short: {
+    ru: 'Всё по плану: 8 августа, Tau Resort, сбор с 17:00. Напишу тебе в день праздника 💛',
+    en: 'All on track: 8 August, Tau Resort, guests from 17:00. I’ll message you on the day 💛',
+    kk: 'Барлығы жоспар бойынша: 8 тамыз, Tau Resort, 17:00-ден. Той күні жазамын 💛',
+  },
   // --- web version of the game (/play) ---
   play_title: { ru: 'Игра', en: 'The game', kk: 'Ойын' },
   play_intro: {

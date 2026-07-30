@@ -57,6 +57,8 @@ export interface Settings {
 // bot_state.state shape
 export interface BotState {
   locale?: Locale;
+  // greeted once while the game is closed, so we stop repeating the long welcome
+  greeted?: boolean;
   // assignment id awaiting a photo, or 'free' / 'wish' modes
   awaiting?: { kind: 'task'; assignment_id: string } | { kind: 'free' } | { kind: 'wish' };
 }
