@@ -59,6 +59,30 @@ h1, h2, h3 {
   .arrive { animation: none; }
 }
 
+/* FAQ reveal. A keyframe on [open] animates the opening in every browser;
+   ::details-content transitions are still too patchy across Safari versions
+   to rely on for guests' phones. */
+@keyframes faq-reveal {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+.faq[open] .faq-body {
+  animation: faq-reveal 0.28s ease-out both;
+}
+.faq summary::-webkit-details-marker { display: none; }
+/* Tailwind does not generate a group-open: variant, so the chevron turn lives here */
+.faq-chevron { transition: transform 0.3s ease; }
+.faq[open] .faq-chevron { transform: rotate(45deg); }
+.faq summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 1rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .faq[open] .faq-body { animation: none; }
+  .faq-chevron { transition: none; }
+}
+
 /* slow drifting petals on the invitation hero */
 @keyframes petal-drift {
   0% { transform: translateY(-8vh) rotate(0deg); opacity: 0; }

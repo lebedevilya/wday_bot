@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { EVENT } from '@/lib/event';
 import Rsvp from './Rsvp';
+import Faq from './Faq';
 import type { Locale } from '@/lib/types';
 
 const PETALS = [
@@ -149,6 +150,8 @@ export default function Invitation() {
         <Rsvp locale={locale} />
         <p className="mt-8 text-sm text-ink-muted">{t(ui.rsvpNotFound)} {contactLink}</p>
       </section>
+
+      <Faq locale={locale} />
 
       <footer className="flex flex-col items-center gap-4 border-t border-line px-6 py-12 text-center">
         <p className="text-sm text-ink-muted">{t(EVENT.names)} · {t(EVENT.dateLine)}</p>
