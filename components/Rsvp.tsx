@@ -54,8 +54,9 @@ export default function Rsvp({ locale }: { locale: Locale }) {
     }
   }
 
+  // Required: the photo is what makes the party game work, so there is no skip path.
   async function submitPhoto() {
-    if (!crop) return setStep('arrival');
+    if (!crop) return;
     if (crop.size > 12 * 1024 * 1024) return setError(t(ui.rsvpPhotoTooBig));
     const f = new FormData();
     f.set('action', 'photo');
@@ -191,9 +192,7 @@ export default function Rsvp({ locale }: { locale: Locale }) {
           <button onClick={submitPhoto} disabled={busy || !crop} className={primary}>
             {busy ? t(ui.rsvpSending) : t(ui.rsvpNext)}
           </button>
-          <button onClick={() => setStep('arrival')} className="cursor-pointer text-sm text-ink-muted underline">
-            {t(ui.rsvpSkip)}
-          </button>
+          {!crop && <p className="text-center text-xs text-ink-muted">{t(ui.rsvpPhotoRequired)}</p>}
         </div>
       )}
 

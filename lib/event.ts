@@ -130,6 +130,11 @@ export const EVENT = {
     rsvpCropHint: { ru: 'Двигайте фото и меняйте масштаб, чтобы лица попали в кадр', en: 'Drag the photo and zoom so the faces fit the frame', kk: 'Беттер кадрға түсуі үшін фотоны жылжытып, масштабты өзгертіңіз' } as L,
     rsvpZoom: { ru: 'Масштаб', en: 'Zoom', kk: 'Масштаб' } as L,
     rsvpOtherPhoto: { ru: 'Другое фото', en: 'Another photo', kk: 'Басқа фото' } as L,
+    rsvpPhotoRequired: {
+      ru: 'Без фото, к сожалению, не обойтись — добавьте его, чтобы продолжить',
+      en: 'We do need the photo — please add one to continue',
+      kk: 'Фото қажет — жалғастыру үшін қосыңыз',
+    } as L,
     rsvpPhotoTooBig: { ru: 'Фото слишком большое — выберите другое.', en: 'That photo is too large — pick another.', kk: 'Фото тым үлкен — басқасын таңдаңыз.' } as L,
     // arrival
     rsvpArrivalTitle: { ru: 'Во сколько вас ждать?', en: 'When should we expect you?', kk: 'Сізді қашан күтейік?' } as L,
